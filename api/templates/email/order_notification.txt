@@ -1,0 +1,7 @@
+New order placed
+
+PDF: {{ pdf.name }}
+Buyer: {{ buyer_email }}
+Amount: {{ amount }} {{ purchase.pdf.price }}
+Order ID: {{ order_id }}
+Time: {{ timestamp }}

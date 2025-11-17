@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+        }
+        .header { 
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white; 
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
+        .header::before {
+            content: "🎉";
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .content { 
+            padding: 40px 30px; 
+            background: white;
+            font-size: 16px;
+        }
+        .footer { 
+            text-align: center; 
+            padding: 30px 20px; 
+            font-size: 14px; 
+            color: #666;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        .icon-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .icon {
+            font-size: 3rem;
+            margin: 10px;
+            display: inline-block;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            .header {
+                padding: 30px 15px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .header::before {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Welcome to RushHour Camp! 🚀</h1>
+            <p>We're thrilled to have you join our community</p>
+        </div>
+        <div class="content">
+            {{ message|linebreaks }}
+            
+            <div class="icon-section">
+                <div class="icon">⭐</div>
+                <div class="icon">🚀</div>
+                <div class="icon">🎯</div>
+            </div>
+            
+            <center>
+                <a href="#" class="cta-button">Get Started →</a>
+            </center>
+        </div>
+        <div class="footer">
+            <p>📍 123 Camp Street, Adventure City</p>
+            <p>📞 +1 (555) 123-4567 | ✉️ hello@rushhourcamp.local</p>
+            <p>&copy; 2024 RushHour Camp. All rights reserved. 🏕️</p>
+        </div>
+    </div>
+</body>
+</html>

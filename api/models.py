@@ -4,6 +4,7 @@ import random
 from datetime import timedelta
 from django.db import models
 from django.utils import timezone
+from django.db import transaction
 from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin, BaseUserManager
 )
@@ -91,6 +92,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_regular_user(self):
         return self.role == self.Role.REGULAR_USER
+    
 
 
 class VerificationCode(models.Model):
@@ -123,6 +125,72 @@ class VerificationCode(models.Model):
 
 
 
+
+import uuid
+from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
+
+class PasswordResetCode(models.Model):
+    """
+    Stores a short numeric verification code emailed to the user.
+    After verification a reset_token (uuid) is issued to allow setting a new password.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="password_reset_codes")
+    code = models.CharField(max_length=6)  # numeric code as string (e.g. 123456)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used = models.BooleanField(default=False)
+    reset_token = models.UUIDField(null=True, blank=True)  # issued after successful code verification
+
+    class Meta:
+        db_table = "accounts_password_reset_code"
+        indexes = [
+            models.Index(fields=["user", "code"]),
+            models.Index(fields=["reset_token"]),
+        ]
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @classmethod
+    def create_for_user(cls, user, expiry_minutes=10):
+        code = f"{random.randint(100000, 999999)}"
+        expires_at = timezone.now() + timedelta(minutes=expiry_minutes)
+        return cls.objects.create(user=user, code=code, expires_at=expires_at)
+
+
+
+import uuid
+from django.db import models
+from django.utils import timezone
+
+
+class PageVisitRecord(models.Model):
+    """
+    Stores the number of visits to a specific page at a specific time.
+    Each record represents a snapshot (e.g., per day, per hour, etc.).
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    page = models.CharField(max_length=255, db_index=True)
+    visits = models.PositiveIntegerField(default=0)
+    recorded_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        verbose_name = "Page Visit Record"
+        verbose_name_plural = "Page Visit Records"
+        ordering = ("-recorded_at", "page")
+        indexes = [
+            models.Index(fields=["page", "recorded_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.page} — {self.visits} visits @ {self.recorded_at:%Y-%m-%d %H:%M:%S}"
+
+
+
 import uuid
 import os
 
@@ -134,7 +202,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 # ---- config ----
-MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
 
@@ -377,416 +445,585 @@ class Plan(models.Model):
             self.title = f"{self.duration_days} Days Access"
         super().save(*args, **kwargs)
 
+    @classmethod
+    def get_or_create_trial(cls, exam_type: str, days: int = 7, currency: str = "USD"):
+        """
+        Find or create a trial Plan for a given exam_type and duration (days).
+        Price defaults to 0.00 and the plan is marked active=True.
+
+        NOTE: duration_days normally uses DURATION_CHOICES (30/60/90). Creating a 7-day
+        plan bypasses those choices (choices are a form-level validation), which is OK for
+        trial purposes. If you prefer to restrict to existing choices, adjust accordingly.
+        """
+        # Use transaction to avoid races
+        with transaction.atomic():
+            defaults = {
+                "price": Decimal("0.00"),
+                "currency": currency,
+                "active": True,
+                "title": f"{days} Days Trial",
+            }
+            plan, created = cls.objects.get_or_create(
+                exam_type=exam_type,
+                duration_days=days,
+                defaults=defaults,
+            )
+            # If plan existed but wasn't active or priced correctly, ensure trial-friendly values
+            changed = False
+            if not plan.active:
+                plan.active = True
+                changed = True
+            if plan.price != defaults["price"]:
+                plan.price = defaults["price"]
+                changed = True
+            if plan.currency != defaults["currency"]:
+                plan.currency = defaults["currency"]
+                changed = True
+            if changed:
+                plan.save()
+            return plan
+        
 
 
-
-# -------- ATI TEAS EXAM --------------- #
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-
-# --- Models (Exam / Question / Choice) ---
-class Exam(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    is_complete = models.BooleanField(default=False)
-    total_questions = models.PositiveIntegerField(default=0, editable=False)  # specified by creator
+# -------------------------
+# FreeTrial model (NEW)
+# -------------------------
+class FreeTrial(models.Model):
+    """
+    Records emails that have received a free trial so that users cannot receive more than one.
+    Stores email (unique) and optional FK to user (if available).
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField("email address", db_index=True, unique=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="free_trials")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
-    def recalc_current_question_count(self):
-        """Return the current number of question rows for this exam (not stored)."""
-        return self.questions.count()
-
-    def refresh_total_questions_field(self):
-        """Denormalized field: update total_questions to the desired declared value only
-           (we keep 'total_questions' as the declared quota; current count is computed)."""
-        # NOTE: total_questions field is the declared quota set when creating the exam.
-        # We do not overwrite it here — instead we provide helper if needed.
-        self.save(update_fields=['updated_at'])
+    class Meta:
+        ordering = ("-created_at",)
+        verbose_name = "free trial"
+        verbose_name_plural = "free trials"
 
     def __str__(self):
-        return self.name
+        return f"FreeTrial({self.email}, created_at={self.created_at.isoformat()})"
 
 
-class Question(models.Model):
-    # format enum
-    FORMAT_1 = 1  # question, choices, explanation, correct answer
-    FORMAT_2 = 2  # paragraph, imagepath, question, choices, explanation, correct answer
-    FORMAT_3 = 3  # paragraph, question, choices, explanation, correct answer
-    FORMAT_4 = 4  # question, choices, imagepath, explanation, correct answer
 
-    FORMAT_CHOICES = (
-        (FORMAT_1, "Q, Choices, Explanation, Correct"),
-        (FORMAT_2, "Paragraph, ImagePath, Q, Choices, Explanation, Correct"),
-        (FORMAT_3, "Paragraph, Q, Choices, Explanation, Correct"),
-        (FORMAT_4, "Q, Choices, ImagePath, Explanation, Correct"),
-    )
 
-    exam = models.ForeignKey(Exam, related_name='questions', on_delete=models.CASCADE)
-    order = models.PositiveIntegerField(help_text="1-based position inside the exam.", blank=True, null=True)
-    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)
-    paragraph = models.TextField(blank=True, default='')
-    image_path = models.CharField(max_length=1024, blank=True, default='')
-    question_text = models.TextField()
-    explanation = models.TextField()
-    correct_choice = models.ForeignKey(
-        'Choice',
-        null=True,
-        blank=True,
-        related_name='is_correct_for',
-        on_delete=models.PROTECT
-    )
+import uuid
+from django.conf import settings
+from django.db import models
+
+class Announcement(models.Model):
+    class FormatChoices:
+        IMAGE = "image"
+        VIDEO = "video"
+        CHOICES = [
+            (IMAGE, "Image"),
+            (VIDEO, "Video"),
+        ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    format = models.CharField(max_length=16, choices=FormatChoices.CHOICES)
+    mediapath = models.URLField(max_length=1024)   # cloudinary secure_url
+    public_id = models.CharField(max_length=1024, blank=True, null=True)  # stored Cloudinary public_id
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "announcements"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.format} - {self.mediapath}"
+
+
+class AnnouncementSeen(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="seen_announcements")
+    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name="seen_by")
+    seen_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "announcement_seen"
+        unique_together = ("user", "announcement")
+        ordering = ("-seen_at",)
+
+    def __str__(self):
+        return f"{self.user} saw {self.announcement.id}"
+
+
+
+
+
+
+import uuid
+from django.db import models
+from django.conf import settings
+
+class Campaign(models.Model):
+    FORMAT_NONE = "none"
+    FORMAT_IMAGE = "image"
+    FORMAT_VIDEO = "video"
+
+    FORMAT_CHOICES = [
+        (FORMAT_NONE, "None"),
+        (FORMAT_IMAGE, "Image"),
+        (FORMAT_VIDEO, "Video"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    heading = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    format = models.CharField(max_length=16, choices=FORMAT_CHOICES, default=FORMAT_NONE)
+    mediapath = models.URLField(blank=True)  # Cloudinary secure_url
+    public_id = models.CharField(max_length=500, blank=True)  # Cloudinary public_id
+    cloud_resource_type = models.CharField(max_length=16, blank=True)  # 'image' or 'video'
+    is_active = models.BooleanField(default=False)
+    link = models.URLField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="campaigns")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['order']
-        unique_together = (('exam', 'order'),)
-        indexes = [
-            models.Index(fields=['exam', 'order']),
-        ]
-
-    def clean(self):
-        # Format-specific required/forbidden fields.
-        if self.format == self.FORMAT_1:
-            if self.paragraph.strip():
-                raise ValidationError(_("Format 1 must not include a paragraph."))
-            if self.image_path.strip():
-                raise ValidationError(_("Format 1 must not include an image path."))
-        elif self.format == self.FORMAT_2:
-            if not self.paragraph.strip():
-                raise ValidationError(_("Format 2 requires a paragraph."))
-            if not self.image_path.strip():
-                raise ValidationError(_("Format 2 requires an image_path (Cloudinary path)."))
-        elif self.format == self.FORMAT_3:
-            if not self.paragraph.strip():
-                raise ValidationError(_("Format 3 requires a paragraph."))
-            if self.image_path.strip():
-                raise ValidationError(_("Format 3 must not include an image path."))
-        elif self.format == self.FORMAT_4:
-            if not self.image_path.strip():
-                raise ValidationError(_("Format 4 requires an image_path (Cloudinary path)."))
-            if self.paragraph.strip():
-                raise ValidationError(_("Format 4 must not include a paragraph."))
-        else:
-            raise ValidationError(_("Unknown question format."))
-
-        # If correct_choice is set, ensure it belongs to this question (if object persisted).
-        if self.correct_choice is not None:
-            # If self.id is None (not yet saved) we cannot compare question_id; that will be handled in helper.
-            if self.pk is not None and self.correct_choice.question_id != self.pk:
-                raise ValidationError({"correct_choice": _("Correct choice must belong to this question.")})
-
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        # Auto-assign 'order' to append at end if not provided.
-        if not self.order:
-            last = Question.objects.filter(exam=self.exam).order_by('-order').first()
-            self.order = (last.order + 1) if last and last.order else 1
-        super().save(*args, **kwargs)
+        db_table = "marketing_campaign"
+        ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Q{self.order} on {self.exam.name}"
+        return f"{self.heading} ({self.id})"
 
+
+
+class CampaignView(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="views")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="campaign_views")
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    seen_at = models.DateTimeField(auto_now_add=True)
+    # NEW: next time this campaign may be shown to this user
+    next_time_to_show = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "marketing_campaign_view"
+        ordering = ["-seen_at"]
+        # optional unique together so we keep one record per user+campaign when user is not null
+        unique_together = ("campaign", "user")
+
+    def __str__(self):
+        return f"View {self.id} -> {self.campaign_id}"
+
+
+
+
+
+
+
+
+
+from django.db import models
+from django.contrib.postgres.fields import ArrayField  # optional, JSONField is fine
+from django.core.validators import MinValueValidator
+from django.db.models import JSONField
+
+FORMAT_CHOICES = [(i, f'Format {i}') for i in range(1, 11)]
+
+class ATI(models.Model):
+    name = models.CharField(max_length=255)
+    completed = models.BooleanField(default=False)
+    isfree = models.BooleanField(default=False)
+
+    duration_seconds = models.PositiveIntegerField(
+        default=3600,  # 1 hour in seconds
+        null=True, blank=True,
+        help_text="Exam duration in seconds (default = 1 hour)"
+    )
+
+    def __str__(self):
+        return f"{self.name} ({'Completed' if self.completed else 'Draft'})"
+
+class Question(models.Model):
+    exam = models.ForeignKey(ATI, related_name='questions', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=1)
+    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)
+    # rich text fields (TinyMCE HTML)
+    question_html = models.TextField(blank=True)   # used for formats that have a question
+    paragraph_html = models.TextField(blank=True)  # used for formats with a paragraph
+    table_html = models.TextField(blank=True)      # you can store table HTML from TinyMCE
+    explanation_html = models.TextField(blank=True)
+    # image url from Cloudinary
+    image_url = models.URLField(blank=True)
+    # For regular choices (is_correct flag). For multiple correct answers, multiple Choice.is_correct=True
+    # For specialchoices we use a separate SpecialChoice model and store the correct order below
+    # Save the correct order as a list of SpecialChoice ids (integers)
+    special_correct_order = JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Q{self.order} (Format {self.format}) - Exam: {self.exam.name}"
 
 class Choice(models.Model):
     question = models.ForeignKey(Question, related_name='choices', on_delete=models.CASCADE)
-    text = models.TextField()
-    index = models.PositiveSmallIntegerField(help_text="1..6 position for this choice within the question.")
-
-    class Meta:
-        unique_together = (('question', 'index'),)
-        ordering = ['index']
-
-    def clean(self):
-        if not (1 <= self.index <= 6):
-            raise ValidationError({"index": _("Choice index must be between 1 and 6.")})
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Choice {self.index} for Q{self.question.order} ({self.question.exam.name})"
-
-
-# --- Helper to create a question and its choices atomically and set correct_choice ---
-def create_question_with_choices(
-    exam: Exam,
-    fmt: int,
-    question_text: str,
-    explanation: str,
-    choices_texts: list,
-    correct_index_zero_based: int,
-    paragraph: str = '',
-    image_path: str = '',
-):
-    """
-    Atomically create a Question and Choices and set correct_choice.
-    choices_texts: list[str] (from frontend individual inputs)
-    correct_index_zero_based: 0-based index (frontend uses letter buttons A->0)
-    """
-    if not (2 <= len(choices_texts) <= 6):
-        raise ValidationError("Must supply between 2 and 6 choices.")
-
-    if not (0 <= correct_index_zero_based < len(choices_texts)):
-        raise ValidationError("correct_index must be within range of choices")
-
-    if exam.is_complete:
-        raise ValidationError("Exam is already marked complete; cannot add questions.")
-
-    with transaction.atomic():
-        q = Question(
-            exam=exam,
-            format=fmt,
-            paragraph=paragraph or '',
-            image_path=image_path or '',
-            question_text=question_text,
-            explanation=explanation,
-        )
-        q.full_clean()
-        q.save()  # saves and sets q.pk and order
-
-        created_choices = []
-        for idx, text in enumerate(choices_texts, start=1):
-            c = Choice(question=q, text=text, index=idx)
-            c.full_clean()
-            c.save()
-            created_choices.append(c)
-
-        # attach correct_choice (point to Choice object)
-        correct_choice = created_choices[correct_index_zero_based]
-        q.correct_choice = correct_choice
-        q.full_clean()
-        q.save(update_fields=['correct_choice'])
-
-        # return q
-        return q
-
-
-# --- Signals to update denormalized counts or perform housekeeping ---
-@receiver(post_save, sender=Question)
-@receiver(post_delete, sender=Question)
-def update_exam_question_counts(sender, instance, **kwargs):
-    # When questions are created/deleted, we do not modify declared total_questions,
-    # but we might want to keep updated_at accurate. No destructive changes here.
-    exam = instance.exam
-    exam.save(update_fields=['updated_at'])
-
-
-@receiver(post_save, sender=Choice)
-@receiver(post_delete, sender=Choice)
-def ensure_choices_count(sender, instance, **kwargs):
-    # Optionally we could enforce 2..6 at DB level. For now we only raise in create helper and in clean operations.
-    pass
-
-
-
-
-
-
-# -------- HESI A2 EXAM --------------- #
-
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
-
-# --- Models (HesiExam / HesiQuestion / HesiChoice) ---
-class HesiExam(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    is_complete = models.BooleanField(default=False)
-    total_questions = models.PositiveIntegerField(default=0, editable=False)  # declared quota
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def recalc_current_question_count(self):
-        """Return the current number of question rows for this exam (not stored)."""
-        return self.questions.count()
-
-    def refresh_total_questions_field(self):
-        """Denormalized field: update total_questions to the desired declared value only
-           (we keep 'total_questions' as the declared quota; current count is computed)."""
-        # NOTE: total_questions field is the declared quota set when creating the exam.
-        # We do not overwrite it here — instead we provide helper if needed.
-        self.save(update_fields=['updated_at'])
-
-    def __str__(self):
-        return self.name
-
-
-class HesiQuestion(models.Model):
-    # format enum
-    FORMAT_1 = 1  # question, choices, explanation, correct answer
-    FORMAT_2 = 2  # paragraph, imagepath, question, choices, explanation, correct answer
-    FORMAT_3 = 3  # paragraph, question, choices, explanation, correct answer
-    FORMAT_4 = 4  # question, choices, imagepath, explanation, correct answer
-
-    FORMAT_CHOICES = (
-        (FORMAT_1, "Q, Choices, Explanation, Correct"),
-        (FORMAT_2, "Paragraph, ImagePath, Q, Choices, Explanation, Correct"),
-        (FORMAT_3, "Paragraph, Q, Choices, Explanation, Correct"),
-        (FORMAT_4, "Q, Choices, ImagePath, Explanation, Correct"),
-    )
-
-    exam = models.ForeignKey(HesiExam, related_name='questions', on_delete=models.CASCADE)
-    order = models.PositiveIntegerField(help_text="1-based position inside the exam.", blank=True, null=True)
-    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)
-    paragraph = models.TextField(blank=True, default='')
-    image_path = models.CharField(max_length=1024, blank=True, default='')
-    question_text = models.TextField()
-    explanation = models.TextField()
-    correct_choice = models.ForeignKey(
-        'HesiChoice',
-        null=True,
-        blank=True,
-        related_name='is_correct_for',
-        on_delete=models.PROTECT
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    text_html = models.TextField()   # styled with TinyMCE
+    order = models.PositiveIntegerField(default=0)
+    is_correct = models.BooleanField(default=False)  # for regular multiple choice answers
 
     class Meta:
         ordering = ['order']
-        unique_together = (('exam', 'order'),)
-        indexes = [
-            models.Index(fields=['exam', 'order']),
-        ]
-
-    def clean(self):
-        # Format-specific required/forbidden fields.
-        if self.format == self.FORMAT_1:
-            if self.paragraph.strip():
-                raise ValidationError(_("Format 1 must not include a paragraph."))
-            if self.image_path.strip():
-                raise ValidationError(_("Format 1 must not include an image path."))
-        elif self.format == self.FORMAT_2:
-            if not self.paragraph.strip():
-                raise ValidationError(_("Format 2 requires a paragraph."))
-            if not self.image_path.strip():
-                raise ValidationError(_("Format 2 requires an image_path (Cloudinary path)."))
-        elif self.format == self.FORMAT_3:
-            if not self.paragraph.strip():
-                raise ValidationError(_("Format 3 requires a paragraph."))
-            if self.image_path.strip():
-                raise ValidationError(_("Format 3 must not include an image path."))
-        elif self.format == self.FORMAT_4:
-            if not self.image_path.strip():
-                raise ValidationError(_("Format 4 requires an image_path (Cloudinary path)."))
-            if self.paragraph.strip():
-                raise ValidationError(_("Format 4 must not include a paragraph."))
-        else:
-            raise ValidationError(_("Unknown question format."))
-
-        # If correct_choice is set, ensure it belongs to this question (if object persisted).
-        if self.correct_choice is not None:
-            # If self.pk is None (not yet saved) we cannot compare question_id; that will be handled in helper.
-            if self.pk is not None and self.correct_choice.question_id != self.pk:
-                raise ValidationError({"correct_choice": _("Correct choice must belong to this question.")})
-
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        # Auto-assign 'order' to append at end if not provided.
-        if not self.order:
-            last = HesiQuestion.objects.filter(exam=self.exam).order_by('-order').first()
-            self.order = (last.order + 1) if last and last.order else 1
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Q{self.order} on {self.exam.name}"
+        return f"Choice {self.order} for Q{self.question.order}"
 
-
-class HesiChoice(models.Model):
-    question = models.ForeignKey(HesiQuestion, related_name='choices', on_delete=models.CASCADE)
-    text = models.TextField()
-    index = models.PositiveSmallIntegerField(help_text="1..6 position for this choice within the question.")
+class SpecialChoice(models.Model):
+    question = models.ForeignKey(Question, related_name='specialchoices', on_delete=models.CASCADE)
+    text_html = models.TextField()
+    order = models.PositiveIntegerField(default=0)  # display order
 
     class Meta:
-        unique_together = (('question', 'index'),)
-        ordering = ['index']
-
-    def clean(self):
-        if not (1 <= self.index <= 6):
-            raise ValidationError({"index": _("Choice index must be between 1 and 6.")})
-        super().clean()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        ordering = ['order']
 
     def __str__(self):
-        return f"Choice {self.index} for Q{self.question.order} ({self.question.exam.name})"
+        return f"SpecialChoice {self.order} for Q{self.question.order}"
 
 
-# --- Helper to create a question and its choices atomically and set correct_choice ---
-def create_hesi_question_with_choices(
-    exam: HesiExam,
-    fmt: int,
-    question_text: str,
-    explanation: str,
-    choices_texts: list,
-    correct_index_zero_based: int,
-    paragraph: str = '',
-    image_path: str = '',
-):
+
+
+
+
+from django.db import models
+from django.contrib.postgres.fields import ArrayField  # optional, JSONField is fine
+from django.core.validators import MinValueValidator
+from django.db.models import JSONField
+
+FORMAT_CHOICES_HESI = [(i, f'Format {i}') for i in range(1, 11)]
+
+class HESI(models.Model):
+    name = models.CharField(max_length=255)
+    completed = models.BooleanField(default=False)
+    isfree = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.name} ({'Completed' if self.completed else 'Draft'})"
+
+class HESIQuestion(models.Model):
+    exam = models.ForeignKey(HESI, related_name='questions', on_delete=models.CASCADE)
+    order = models.PositiveIntegerField(default=1)
+    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)
+    # rich text fields (TinyMCE HTML)
+    question_html = models.TextField(blank=True)   # used for formats that have a question
+    paragraph_html = models.TextField(blank=True)  # used for formats with a paragraph
+    table_html = models.TextField(blank=True)      # you can store table HTML from TinyMCE
+    explanation_html = models.TextField(blank=True)
+    # image url from Cloudinary
+    image_url = models.URLField(blank=True)
+    # For regular choices (is_correct flag). For multiple correct answers, multiple Choice.is_correct=True
+    # For specialchoices we use a separate SpecialChoice model and store the correct order below
+    # Save the correct order as a list of SpecialChoice ids (integers)
+    special_correct_order = JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Q{self.order} (Format {self.format}) - Exam: {self.exam.name}"
+
+class HESIChoice(models.Model):
+    question = models.ForeignKey(HESIQuestion, related_name='choices', on_delete=models.CASCADE)
+    text_html = models.TextField()   # styled with TinyMCE
+    order = models.PositiveIntegerField(default=0)
+    is_correct = models.BooleanField(default=False)  # for regular multiple choice answers
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"Choice {self.order} for Q{self.question.order}"
+
+class HESISpecialChoice(models.Model):
+    question = models.ForeignKey(HESIQuestion, related_name='specialchoices', on_delete=models.CASCADE)
+    text_html = models.TextField()
+    order = models.PositiveIntegerField(default=0)  # display order
+
+    class Meta:
+        ordering = ['order']
+
+    def __str__(self):
+        return f"SpecialChoice {self.order} for Q{self.question.order}"
+
+
+
+
+# models.py (append after existing models)
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models import JSONField
+
+User = get_user_model()
+
+
+class Attempt(models.Model):
     """
-    Atomically create a HesiQuestion and HesiChoices and set correct_choice.
-    choices_texts: list[str] (from frontend individual inputs)
-    correct_index_zero_based: 0-based index (frontend uses letter buttons A->0)
+    Store user attempt state for a given ATI exam.
+    - time_spent: seconds the user has already used (so countdown resumes from total_seconds - time_spent)
+    - last_question: the order index (PositiveInteger) of the last question user attempted
+    - answers: JSON mapping question_id -> selected value
+        For regular choices: store selected Choice.id (or list for multi-correct)
+        For special choices: store list of SpecialChoice ids (ordered)
+    - grade: optional float
+    - points_scored: integer
+    - total_questions: integer
+    - is_completed: boolean
+    - cancelled_at: datetime when user navigated away (optional)
     """
-    if not (2 <= len(choices_texts) <= 6):
-        raise ValidationError("Must supply between 2 and 6 choices.")
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='attempts', on_delete=models.CASCADE)
+    exam = models.ForeignKey(ATI, related_name='attempts', on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    if not (0 <= correct_index_zero_based < len(choices_texts)):
-        raise ValidationError("correct_index must be within range of choices")
+    time_spent = models.PositiveIntegerField(default=0)  # seconds
+    last_question = models.PositiveIntegerField(default=1)
+    answers = JSONField(default=dict, blank=True)  # {question_id: choice_id or [specialchoice_ids], ...}
 
-    if exam.is_complete:
-        raise ValidationError("Exam is already marked complete; cannot add questions.")
+    grade = models.FloatField(null=True, blank=True)
+    points_scored = models.PositiveIntegerField(null=True, blank=True)
+    total_questions = models.PositiveIntegerField(null=True, blank=True)
 
-    with transaction.atomic():
-        q = HesiQuestion(
-            exam=exam,
-            format=fmt,
-            paragraph=paragraph or '',
-            image_path=image_path or '',
-            question_text=question_text,
-            explanation=explanation,
-        )
-        q.full_clean()
-        q.save()  # saves and sets q.pk and order
+    is_completed = models.BooleanField(default=False)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
 
-        created_choices = []
-        for idx, text in enumerate(choices_texts, start=1):
-            c = HesiChoice(question=q, text=text, index=idx)
-            c.full_clean()
-            c.save()
-            created_choices.append(c)
+    class Meta:
+        unique_together = ("user", "exam")
+        ordering = ["-updated_at"]
 
-        # attach correct_choice (point to HesiChoice object)
-        correct_choice = created_choices[correct_index_zero_based]
-        q.correct_choice = correct_choice
-        q.full_clean()
-        q.save(update_fields=['correct_choice'])
-
-        return q
+    def __str__(self):
+        return f"Attempt {self.user.email} - {self.exam.name}"
 
 
-# --- Signals to update denormalized counts or perform housekeeping ---
-@receiver(post_save, sender=HesiQuestion)
-@receiver(post_delete, sender=HesiQuestion)
-def update_exam_question_counts(sender, instance, **kwargs):
-    # When questions are created/deleted, we do not modify declared total_questions,
-    # but we might want to keep updated_at accurate. No destructive changes here.
-    exam = instance.exam
-    exam.save(update_fields=['updated_at'])
+class Bookmark(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='bookmarks', on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name='bookmarks', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "question")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Bookmark {self.user.email} - Q{self.question.order}"
 
 
-@receiver(post_save, sender=HesiChoice)
-@receiver(post_delete, sender=HesiChoice)
-def ensure_choices_count(sender, instance, **kwargs):
-    # Optionally we could enforce 2..6 at DB level. For now we only raise in create helper and in clean operations.
-    pass
+class Report(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='reports', on_delete=models.CASCADE)
+    exam = models.ForeignKey(ATI, related_name='reports', on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name='reports', on_delete=models.CASCADE)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Report {self.user.email} - Q{self.question.order}"
+
+
+
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models import JSONField
+
+User = get_user_model()
+
+
+class HESIAttempt(models.Model):
+    """
+    Store user attempt state for a given HESI exam.
+    - time_spent: seconds the user has already used (so countdown resumes from total_seconds - time_spent)
+    - last_question: the order index (PositiveInteger) of the last question user attempted
+    - answers: JSON mapping question_id -> selected value
+        For regular choices: store selected Choice.id (or list for multi-correct)
+        For special choices: store list of SpecialChoice ids (ordered)
+    - grade: optional float
+    - points_scored: integer
+    - total_questions: integer
+    - is_completed: boolean
+    - cancelled_at: datetime when user navigated away (optional)
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='hesi_attempts', on_delete=models.CASCADE)
+    exam = models.ForeignKey(HESI, related_name='hesi_attempts', on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    time_spent = models.PositiveIntegerField(default=0)  # seconds
+    last_question = models.PositiveIntegerField(default=1)
+    answers = JSONField(default=dict, blank=True)  # {question_id: choice_id or [specialchoice_ids], ...}
+
+    grade = models.FloatField(null=True, blank=True)
+    points_scored = models.PositiveIntegerField(null=True, blank=True)
+    total_questions = models.PositiveIntegerField(null=True, blank=True)
+
+    is_completed = models.BooleanField(default=False)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("user", "exam")
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"Attempt {self.user.email} - {self.exam.name}"
+
+
+class HESIBookmark(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='hesi_bookmarks', on_delete=models.CASCADE)
+    question = models.ForeignKey(HESIQuestion, related_name='hesi_bookmarks', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "question")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Bookmark {self.user.email} - Q{self.question.order}"
+
+
+class HESIReport(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, related_name='hesi_reports', on_delete=models.CASCADE)
+    exam = models.ForeignKey(HESI, related_name='hesi_reports', on_delete=models.CASCADE)
+    question = models.ForeignKey(HESIQuestion, related_name='hesi_reports', on_delete=models.CASCADE)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Report {self.user.email} - Q{self.question.order}"
+
+
+
+
+from django.db import models
+
+class NewsletterSubscriber(models.Model):
+    """
+    Stores emails of users who subscribe to the newsletter.
+    """
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email
+ 
+
+
+
+
+
+
+
+# api/models.py  — replace the existing Pdf model class with this one
+
+import uuid
+from decimal import Decimal
+from django.db import models
+from django.conf import settings
+from django.core.validators import MinValueValidator
+
+class Pdf(models.Model):
+    # Categories strictly limited to the five provided
+    CATEGORY_ATI = "ATI TEAS"
+    CATEGORY_NCLEX = "NCLEX"
+    CATEGORY_EXIT = "EXIT EXAMS"
+    CATEGORY_HESI = "HESI A2"
+    CATEGORY_TESTBANK = "NURSING TESTBANK"
+
+    CATEGORY_CHOICES = [
+        (CATEGORY_ATI, "ATI TEAS"),
+        (CATEGORY_NCLEX, "NCLEX"),
+        (CATEGORY_EXIT, "EXIT EXAMS"),
+        (CATEGORY_HESI, "HESI A2"),
+        (CATEGORY_TESTBANK, "NURSING TESTBANK"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))])
+    # new: category (required)
+    category = models.CharField(max_length=32, choices=CATEGORY_CHOICES, default=CATEGORY_ATI)
+    # new: proof image URL uploaded to Cloudinary (optional)
+    proof_image = models.URLField(max_length=1024, blank=True, null=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="uploaded_pdfs"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "api_pdf"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.name} ({self.price})"
+
+
+
+
+
+
+
+
+import uuid
+from decimal import Decimal
+from django.db import models
+from django.conf import settings
+from django.core.validators import MinValueValidator
+
+# Pdf model already provided by you earlier in the conversation.
+# New models below:
+
+class PurchaseSession(models.Model):
+    """
+    Temporary purchase session created when user clicks 'Buy Now'.
+    Public endpoints will create this, store chosen pdf and buyer email (when provided).
+    Session gets deleted once purchase is completed.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pdf = models.ForeignKey("Pdf", on_delete=models.CASCADE, related_name="sessions")
+    buyer_email = models.EmailField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "api_purchase_session"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Session {self.id} for {self.pdf.name}"
+
+
+class PdfPurchase(models.Model):
+    """
+    Completed purchase record (persisted after successful PayPal capture).
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pdf = models.ForeignKey("Pdf", on_delete=models.PROTECT, related_name="purchases")
+    buyer_email = models.EmailField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
+    paypal_order_id = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "api_pdf_purchase"
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"Purchase {self.id} of {self.pdf.name} by {self.buyer_email}"

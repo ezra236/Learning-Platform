@@ -560,1131 +560,6 @@ def admin_assistant_delete_view(request, uid):
 
 
 
-#------------------ ATI EXAM CREATION----------------------------------
-#----------------------------------------------------------------------------------
-
-import json
-import os
-from uuid import uuid4
-
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-from django.core.exceptions import ValidationError
-
-import cloudinary
-import cloudinary.uploader
-
-from .models import Exam, Question, Choice, create_question_with_choices
-
-# Ensure cloudinary configured somewhere global (you provided config snippet in settings or startup)
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', settings.CLOUDINARY.get('cloud_name')),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', settings.CLOUDINARY.get('api_key')),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', settings.CLOUDINARY.get('api_secret')),
-)
-
-
-@require_http_methods(["POST"])
-def create_exam_view(request):
-    """
-    POST JSON: { "name": "<exam name>", "total_questions": 5 }
-    Rules:
-      - If an incomplete exam exists, reject (must finish it before creating a new one).
-      - total_questions must be >=1
-    """
-    try:
-        payload = json.loads(request.body.decode())
-        name = payload.get("name", "").strip()
-        total_questions = int(payload.get("total_questions", 0))
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    if not name:
-        return JsonResponse({"error": "Exam name required"}, status=400)
-    if total_questions < 1:
-        return JsonResponse({"error": "total_questions must be >= 1"}, status=400)
-
-    # Is there an active (incomplete) exam?
-    if Exam.objects.filter(is_complete=False).exists():
-        return JsonResponse({"error": "An incomplete exam already exists. Finish it before creating another."}, status=400)
-
-    try:
-        exam = Exam.objects.create(name=name, total_questions=total_questions)
-        return JsonResponse({
-            "detail": "Exam created",
-            "exam": {
-                "id": exam.id,
-                "name": exam.name,
-                "total_questions": exam.total_questions,
-                "is_complete": exam.is_complete,
-                "created_at": exam.created_at.isoformat(),
-            }
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
-
-@require_http_methods(["GET"])
-def active_exam_view(request):
-    """
-    GET returns the current active (incomplete) exam or null.
-    Response: { "exam": { id, name, total_questions, is_complete, added_questions_count } }
-    """
-    exam = Exam.objects.filter(is_complete=False).order_by('created_at').first()
-    if not exam:
-        return JsonResponse({"exam": None})
-    return JsonResponse({
-        "exam": {
-            "id": exam.id,
-            "name": exam.name,
-            "total_questions": exam.total_questions,
-            "is_complete": exam.is_complete,
-            "added_questions_count": exam.questions.count()
-        }
-    })
-
-
-@require_http_methods(["POST"])
-def upload_image_view(request):
-    """
-    POST multipart/form-data with 'file' => uploads to Cloudinary and returns { image_path: "<cloudinary_url>" }
-    """
-    file = request.FILES.get('file')
-    if not file:
-        return JsonResponse({"error": "No file provided"}, status=400)
-
-    # You can validate file size/type here if needed.
-    try:
-        res = cloudinary.uploader.upload(file, folder="exams")
-        url = res.get('secure_url') or res.get('url')
-        return JsonResponse({"image_path": url})
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-
-@require_http_methods(["POST"])
-def create_question_view(request):
-    """
-    POST JSON payload:
-    {
-      "exam_id": 1,
-      "format": 1|2|3|4,
-      "question_text": "...",
-      "explanation": "...",
-      "paragraph": "...",         # optional depending on format
-      "image_path": "...",        # optional depending on format (cloudinary url)
-      "choices": ["one", "two", ...],    # 2..6 strings created from individual inputs in UI
-      "correct_choice_letter": "A"       # "A".."F" corresponds to 0..5
-    }
-    """
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    exam_id = payload.get("exam_id")
-    fmt = payload.get("format")
-    question_text = payload.get("question_text", "")
-    explanation = payload.get("explanation", "")
-    paragraph = payload.get("paragraph", "") or ''
-    image_path = payload.get("image_path", "") or ''
-    choices = payload.get("choices", [])
-    correct_letter = payload.get("correct_choice_letter", None)
-
-    if exam_id is None:
-        return JsonResponse({"error": "exam_id required"}, status=400)
-    exam = get_object_or_404(Exam, pk=exam_id)
-
-    if exam.is_complete:
-        return JsonResponse({"error": "Cannot add question to a completed exam."}, status=400)
-
-    # Validate choices present as separate inputs (frontend will send array built from individual inputs)
-    if not isinstance(choices, list) or len(choices) < 2 or len(choices) > 6:
-        return JsonResponse({"error": "Provide between 2 and 6 choices as individual inputs."}, status=400)
-
-    if not isinstance(correct_letter, str) or len(correct_letter) != 1:
-        return JsonResponse({"error": "correct_choice_letter is required and must be a single character like 'A'."}, status=400)
-
-    letter = correct_letter.upper()
-    if letter < 'A' or ord(letter) >= ord('A') + len(choices):
-        return JsonResponse({"error": "correct_choice_letter out of range for provided choices."}, status=400)
-
-    correct_index = ord(letter) - ord('A')
-
-    try:
-        q = create_question_with_choices(
-            exam=exam,
-            fmt=int(fmt),
-            question_text=question_text,
-            explanation=explanation,
-            choices_texts=choices,
-            correct_index_zero_based=correct_index,
-            paragraph=paragraph,
-            image_path=image_path
-        )
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message if hasattr(ve, 'message') else str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-    # Return created question and its choices (with letters)
-    choices_qs = q.choices.all().order_by('index')
-    return JsonResponse({
-        "detail": "Question created",
-        "question": {
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": [
-                {"letter": chr(ord('A') + (c.index - 1)), "text": c.text, "id": c.id}
-                for c in choices_qs
-            ],
-            "correct_choice_letter": chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None
-        },
-        "exam": {
-            "id": exam.id,
-            "added_questions_count": exam.questions.count(),
-            "total_questions": exam.total_questions
-        }
-    })
-
-
-@require_http_methods(["POST"])
-def mark_exam_complete_view(request):
-    """
-    POST JSON: { "exam_id": <id> }
-    Marks exam complete only if number of added questions == declared total_questions.
-    """
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    exam_id = payload.get("exam_id")
-    if exam_id is None:
-        return JsonResponse({"error": "exam_id required"}, status=400)
-
-    exam = get_object_or_404(Exam, pk=exam_id)
-
-    current_count = exam.questions.count()
-    if current_count != exam.total_questions:
-        return JsonResponse({"error": f"Cannot complete exam — added questions {current_count} != declared total {exam.total_questions}"}, status=400)
-
-    exam.is_complete = True
-    exam.save(update_fields=['is_complete'])
-    return JsonResponse({"detail": "Exam marked complete", "exam_id": exam.id})
-
-
-@require_http_methods(["GET"])
-def exam_questions_view(request, exam_id):
-    """
-    GET: list questions and their choices for exam.
-    """
-    exam = get_object_or_404(Exam, pk=exam_id)
-    data_q = []
-    for q in exam.questions.all().order_by('order'):
-        choices_list = [
-            {"letter": chr(ord('A') + (c.index - 1)), "id": c.id, "text": c.text}
-            for c in q.choices.all().order_by('index')
-        ]
-        data_q.append({
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": choices_list,
-            "correct_choice_letter": chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None
-        })
-    return JsonResponse({"exam": {"id": exam.id, "name": exam.name}, "questions": data_q})
-
-
-
-
-#-----------------------HESI EXAM CREATION-------------------------
-#--------------------------------------------------------------------------------------
-
-import json
-import os
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-from django.core.exceptions import ValidationError
-
-import cloudinary
-import cloudinary.uploader
-
-from .models import (
-    HesiExam,
-    HesiQuestion,
-    HesiChoice,
-    create_hesi_question_with_choices,
-)
-
-# Cloudinary configuration (expects settings.CLOUDINARY or env vars)
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', settings.CLOUDINARY.get('cloud_name') if getattr(settings, 'CLOUDINARY', None) else None),
-    api_key=os.environ.get('CLOUDINARY_API_KEY', settings.CLOUDINARY.get('api_key') if getattr(settings, 'CLOUDINARY', None) else None),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET', settings.CLOUDINARY.get('api_secret') if getattr(settings, 'CLOUDINARY', None) else None),
-)
-
-
-@require_http_methods(["POST"])
-def create_hesi_exam_view(request):
-    """
-    POST JSON: { "name": "<exam name>", "total_questions": 5 }
-    Rules:
-      - If an incomplete HesiExam exists, reject (must finish it before creating a new one).
-      - total_questions must be >=1
-    """
-    try:
-        payload = json.loads(request.body.decode())
-        name = payload.get("name", "").strip()
-        total_questions = int(payload.get("total_questions", 0))
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    if not name:
-        return JsonResponse({"error": "Exam name required"}, status=400)
-    if total_questions < 1:
-        return JsonResponse({"error": "total_questions must be >= 1"}, status=400)
-
-    # Is there an active (incomplete) exam?
-    if HesiExam.objects.filter(is_complete=False).exists():
-        return JsonResponse({"error": "An incomplete exam already exists. Finish it before creating another."}, status=400)
-
-    try:
-        exam = HesiExam.objects.create(name=name, total_questions=total_questions)
-        return JsonResponse({
-            "detail": "Exam created",
-            "exam": {
-                "id": exam.id,
-                "name": exam.name,
-                "total_questions": exam.total_questions,
-                "is_complete": exam.is_complete,
-                "created_at": exam.created_at.isoformat(),
-            }
-        })
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
-
-
-@require_http_methods(["GET"])
-def active_hesi_exam_view(request):
-    """
-    GET returns the current active (incomplete) HesiExam or null.
-    Response: { "exam": { id, name, total_questions, is_complete, added_questions_count } }
-    """
-    exam = HesiExam.objects.filter(is_complete=False).order_by('created_at').first()
-    if not exam:
-        return JsonResponse({"exam": None})
-    return JsonResponse({
-        "exam": {
-            "id": exam.id,
-            "name": exam.name,
-            "total_questions": exam.total_questions,
-            "is_complete": exam.is_complete,
-            "added_questions_count": exam.questions.count()
-        }
-    })
-
-
-@require_http_methods(["POST"])
-def hesi_upload_image_view(request):
-    """
-    POST multipart/form-data with 'file' => uploads to Cloudinary and returns { image_path: "<cloudinary_url>" }
-    """
-    file = request.FILES.get('file')
-    if not file:
-        return JsonResponse({"error": "No file provided"}, status=400)
-
-    try:
-        res = cloudinary.uploader.upload(file, folder="hesi_exams")
-        url = res.get('secure_url') or res.get('url')
-        return JsonResponse({"image_path": url})
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-
-@require_http_methods(["POST"])
-def create_hesi_question_view(request):
-    """
-    POST JSON payload:
-    {
-      "exam_id": 1,
-      "format": 1|2|3|4,
-      "question_text": "...",
-      "explanation": "...",
-      "paragraph": "...",         # optional depending on format
-      "image_path": "...",        # optional depending on format (cloudinary url)
-      "choices": ["one", "two", ...],    # 2..6 strings created from individual inputs in UI
-      "correct_choice_letter": "A"       # "A".."F" corresponds to 0..5
-    }
-    """
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    exam_id = payload.get("exam_id")
-    fmt = payload.get("format")
-    question_text = payload.get("question_text", "")
-    explanation = payload.get("explanation", "")
-    paragraph = payload.get("paragraph", "") or ''
-    image_path = payload.get("image_path", "") or ''
-    choices = payload.get("choices", [])
-    correct_letter = payload.get("correct_choice_letter", None)
-
-    if exam_id is None:
-        return JsonResponse({"error": "exam_id required"}, status=400)
-    exam = get_object_or_404(HesiExam, pk=exam_id)
-
-    if exam.is_complete:
-        return JsonResponse({"error": "Cannot add question to a completed exam."}, status=400)
-
-    # Validate choices present as separate inputs (frontend will send array built from individual inputs)
-    if not isinstance(choices, list) or len(choices) < 2 or len(choices) > 6:
-        return JsonResponse({"error": "Provide between 2 and 6 choices as individual inputs."}, status=400)
-
-    if not isinstance(correct_letter, str) or len(correct_letter) != 1:
-        return JsonResponse({"error": "correct_choice_letter is required and must be a single character like 'A'."}, status=400)
-
-    letter = correct_letter.upper()
-    if letter < 'A' or ord(letter) >= ord('A') + len(choices):
-        return JsonResponse({"error": "correct_choice_letter out of range for provided choices."}, status=400)
-
-    correct_index = ord(letter) - ord('A')
-
-    try:
-        q = create_hesi_question_with_choices(
-            exam=exam,
-            fmt=int(fmt),
-            question_text=question_text,
-            explanation=explanation,
-            choices_texts=choices,
-            correct_index_zero_based=correct_index,
-            paragraph=paragraph,
-            image_path=image_path
-        )
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message if hasattr(ve, 'message') else str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-    choices_qs = q.choices.all().order_by('index')
-    return JsonResponse({
-        "detail": "Question created",
-        "question": {
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": [
-                {"letter": chr(ord('A') + (c.index - 1)), "text": c.text, "id": c.id}
-                for c in choices_qs
-            ],
-            "correct_choice_letter": chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None
-        },
-        "exam": {
-            "id": exam.id,
-            "added_questions_count": exam.questions.count(),
-            "total_questions": exam.total_questions
-        }
-    })
-
-
-@require_http_methods(["POST"])
-def mark_hesi_exam_complete_view(request):
-    """
-    POST JSON: { "exam_id": <id> }
-    Marks exam complete only if number of added questions == declared total_questions.
-    """
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    exam_id = payload.get("exam_id")
-    if exam_id is None:
-        return JsonResponse({"error": "exam_id required"}, status=400)
-
-    exam = get_object_or_404(HesiExam, pk=exam_id)
-
-    current_count = exam.questions.count()
-    if current_count != exam.total_questions:
-        return JsonResponse({"error": f"Cannot complete exam — added questions {current_count} != declared total {exam.total_questions}"}, status=400)
-
-    exam.is_complete = True
-    exam.save(update_fields=['is_complete'])
-    return JsonResponse({"detail": "Exam marked complete", "exam_id": exam.id})
-
-
-@require_http_methods(["GET"])
-def hesi_exam_questions_view(request, exam_id):
-    """
-    GET: list HesiQuestion and their HesiChoices for exam.
-    """
-    exam = get_object_or_404(HesiExam, pk=exam_id)
-    data_q = []
-    for q in exam.questions.all().order_by('order'):
-        choices_list = [
-            {"letter": chr(ord('A') + (c.index - 1)), "id": c.id, "text": c.text}
-            for c in q.choices.all().order_by('index')
-        ]
-        data_q.append({
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": choices_list,
-            "correct_choice_letter": chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None
-        })
-    return JsonResponse({"exam": {"id": exam.id, "name": exam.name}, "questions": data_q})
-
-
-
-
-
-
-#---------------------EDIT ATI EXAM---------------------------------
-#-----------------------------------------------------------------------------
-
-from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.http import JsonResponse
-import cloudinary.uploader
-import re
-
-# Helper: ensure admin (session) user
-def _require_admin(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Not authenticated"}, status=401)
-    if not (getattr(request.user, "is_superadmin", False) or request.user.is_superuser):
-        return JsonResponse({"error": "Forbidden: not a superadmin"}, status=403)
-    return None
-
-# Helper: extract Cloudinary public_id from a Cloudinary URL (best-effort)
-def _extract_cloudinary_public_id(url):
-    """
-    Example Cloudinary URL:
-      https://res.cloudinary.com/<cloud_name>/image/upload/v1620000000/folder/name.jpg
-    We will extract everything after '/upload/' then strip version 'v12345/' and extension.
-    Returns something like 'folder/name' which is the public_id usable by uploader.destroy.
-    Best-effort: returns None if not parseable.
-    """
-    if not url or not isinstance(url, str):
-        return None
-    try:
-        # Find '/upload/' position
-        m = re.search(r'/upload/(?:v\d+/)?(.+)$', url)
-        if not m:
-            return None
-        after = m.group(1)
-        # remove file extension if present (.jpg, .png, .webp, etc.)
-        public_id = re.sub(r'\.[a-zA-Z0-9]+(\?.*)?$', '', after)
-        return public_id
-    except Exception:
-        return None
-
-
-# GET /api/exams/  -> list all exams (for dropdown)
-@require_http_methods(["GET"])
-def list_exams_view(request):
-    # admin-only
-    err = _require_admin(request)
-    if err: 
-        return err
-
-    exams = Exam.objects.all().order_by('-created_at')
-    data = []
-    for e in exams:
-        data.append({
-            "id": e.id,
-            "name": e.name,
-            "is_complete": e.is_complete,
-            "total_questions": e.total_questions,
-            "added_questions_count": e.questions.count(),
-            "created_at": e.created_at.isoformat()
-        })
-    resp = JsonResponse({"exams": data})
-    return _attach_cors_headers(resp, request)
-
-
-# GET /api/exams/<int:exam_id>/full/ -> full exam + ordered questions + choices
-@require_http_methods(["GET"])
-def get_exam_full_view(request, exam_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    exam = get_object_or_404(Exam, pk=exam_id)
-    questions = []
-    for q in exam.questions.all().order_by('order'):
-        choices = [
-            {"letter": chr(ord('A') + (c.index - 1)), "id": c.id, "text": c.text}
-            for c in q.choices.all().order_by('index')
-        ]
-        questions.append({
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": choices,
-            "correct_choice_letter": (chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None)
-        })
-
-    resp = JsonResponse({
-        "exam": {
-            "id": exam.id,
-            "name": exam.name,
-            "is_complete": exam.is_complete,
-            "total_questions": exam.total_questions,
-            "added_questions_count": exam.questions.count(),
-            "created_at": exam.created_at.isoformat(),
-        },
-        "questions": questions
-    })
-    return _attach_cors_headers(resp, request)
-
-
-# PUT /api/exams/<int:exam_id>/update/ -> update exam fields (name, total_questions)
-@require_http_methods(["PUT"])
-def update_exam_view(request, exam_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    exam = get_object_or_404(Exam, pk=exam_id)
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    name = payload.get("name")
-    total_questions = payload.get("total_questions")
-
-    if name is not None:
-        name = str(name).strip()
-        if not name:
-            return JsonResponse({"error": "name cannot be empty"}, status=400)
-        # enforce unique exam name
-        if Exam.objects.exclude(pk=exam.pk).filter(name=name).exists():
-            return JsonResponse({"error": "Exam name already exists"}, status=400)
-        exam.name = name
-
-    if total_questions is not None:
-        try:
-            tq = int(total_questions)
-            if tq < 1:
-                return JsonResponse({"error": "total_questions must be >= 1"}, status=400)
-        except Exception:
-            return JsonResponse({"error": "Invalid total_questions"}, status=400)
-        # It's allowed to change declared total_questions. If there are already more questions than tq, block.
-        if exam.questions.count() > tq:
-            return JsonResponse({"error": "Cannot set total_questions lower than already added questions"}, status=400)
-        exam.total_questions = tq
-
-    exam.save()
-    resp = JsonResponse({"detail": "Exam updated", "exam": {
-        "id": exam.id,
-        "name": exam.name,
-        "total_questions": exam.total_questions,
-        "is_complete": exam.is_complete,
-        "added_questions_count": exam.questions.count()
-    }})
-    return _attach_cors_headers(resp, request)
-
-
-# PUT /api/questions/<int:question_id>/update/ -> update question + choices + correct choice
-@require_http_methods(["PUT"])
-def update_question_view(request, question_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    q = get_object_or_404(Question, pk=question_id)
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    # Updatable fields: format, question_text, explanation, paragraph, image_path (string)
-    fmt = payload.get("format")
-    question_text = payload.get("question_text")
-    explanation = payload.get("explanation")
-    paragraph = payload.get("paragraph")
-    image_path = payload.get("image_path")  # if they supply a new url string (alternatively use replace-image endpoint)
-    choices = payload.get("choices")  # array of strings
-    correct_letter = payload.get("correct_choice_letter")  # e.g. "A"
-
-    # Validate basic
-    if fmt is not None:
-        try:
-            fmt = int(fmt)
-            if fmt not in (1,2,3,4):
-                return JsonResponse({"error": "Invalid format"}, status=400)
-            q.format = fmt
-        except Exception:
-            return JsonResponse({"error": "Invalid format value"}, status=400)
-
-    if question_text is not None:
-        q.question_text = question_text
-
-    if explanation is not None:
-        q.explanation = explanation
-
-    if paragraph is not None:
-        q.paragraph = paragraph
-
-    if image_path is not None:
-        q.image_path = image_path
-
-    # Validate format-specific fields via q.full_clean() before altering choices
-    try:
-        q.full_clean()
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message_dict if hasattr(ve, 'message_dict') else str(ve)}, status=400)
-
-    # Update choices atomically: remove old choices and create new ones
-    if choices is not None:
-        if not isinstance(choices, list) or len(choices) < 2 or len(choices) > 6:
-            return JsonResponse({"error": "Provide between 2 and 6 choices as individual strings"}, status=400)
-
-        # Clear any existing correct_choice to avoid PROTECT blocking deletions
-        q.correct_choice = None
-        q.save(update_fields=['correct_choice'])
-
-        # Delete existing choices
-        q.choices.all().delete()
-
-        # Create new choices with indices 1..N
-        new_choice_objs = []
-        for idx, txt in enumerate(choices, start=1):
-            c = Choice(question=q, text=txt, index=idx)
-            try:
-                c.full_clean()
-            except ValidationError as ve:
-                return JsonResponse({"error": f"Invalid choice at index {idx}: {ve}"}, status=400)
-            c.save()
-            new_choice_objs.append(c)
-
-        # Set correct_choice if provided
-        if correct_letter is not None:
-            if not isinstance(correct_letter, str) or len(correct_letter) != 1:
-                return JsonResponse({"error": "correct_choice_letter must be a single letter like 'A'."}, status=400)
-            letter = correct_letter.upper()
-            idx0 = ord(letter) - ord('A')
-            if idx0 < 0 or idx0 >= len(new_choice_objs):
-                return JsonResponse({"error": "correct_choice_letter out of range for provided choices."}, status=400)
-            q.correct_choice = new_choice_objs[idx0]
-        else:
-            # If not provided, clear correct_choice
-            q.correct_choice = None
-
-    # Final validation & save
-    try:
-        q.full_clean()
-        q.save()
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message_dict if hasattr(ve, 'message_dict') else str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-    # Return updated question
-    choices_qs = q.choices.all().order_by('index')
-    resp = JsonResponse({
-        "detail": "Question updated",
-        "question": {
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": [
-                {"letter": chr(ord('A') + (c.index - 1)), "text": c.text, "id": c.id}
-                for c in choices_qs
-            ],
-            "correct_choice_letter": (chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None)
-        }
-    })
-    return _attach_cors_headers(resp, request)
-
-
-# POST /api/questions/<int:question_id>/replace-image/  -> multipart file upload: replace image in cloudinary and update question.image_path
-@require_http_methods(["POST"])
-def replace_question_image_view(request, question_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    q = get_object_or_404(Question, pk=question_id)
-
-    # file must be provided
-    file = request.FILES.get('file')
-    if not file:
-        return JsonResponse({"error": "No file provided"}, status=400)
-
-    try:
-        # Upload new file
-        res = cloudinary.uploader.upload(file, folder="exams")
-        new_url = res.get('secure_url') or res.get('url')
-        # try to destroy previous image if exists
-        old_path = q.image_path
-        if old_path:
-            public_id = _extract_cloudinary_public_id(old_path)
-            if public_id:
-                try:
-                    cloudinary.uploader.destroy(public_id, invalidate=True)
-                except Exception:
-                    # don't fail on destroy - just log; return success with note
-                    pass
-
-        # Update question path
-        q.image_path = new_url
-        q.save(update_fields=['image_path'])
-        resp = JsonResponse({"detail": "Image replaced", "image_path": new_url})
-        return _attach_cors_headers(resp, request)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-
-
-
-#----------------------EDIT HESI A2 EXAM-----------------------
-#------------------------------------------------------------------------------
-
-import json
-import re
-
-from django.views.decorators.http import require_http_methods
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.http import JsonResponse
-import cloudinary.uploader
-
-from .models import HesiExam, HesiQuestion, HesiChoice
-
-# Helper: ensure admin (session) user
-def _require_admin(request):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Not authenticated"}, status=401)
-    if not (getattr(request.user, "is_superadmin", False) or request.user.is_superuser):
-        return JsonResponse({"error": "Forbidden: not a superadmin"}, status=403)
-    return None
-
-# Helper: extract Cloudinary public_id from a Cloudinary URL (best-effort)
-def _extract_cloudinary_public_id(url):
-    """
-    Example Cloudinary URL:
-      https://res.cloudinary.com/<cloud_name>/image/upload/v1620000000/folder/name.jpg
-    We will extract everything after '/upload/' then strip version 'v12345/' and extension.
-    Returns something like 'folder/name' which is the public_id usable by uploader.destroy.
-    Best-effort: returns None if not parseable.
-    """
-    if not url or not isinstance(url, str):
-        return None
-    try:
-        m = re.search(r'/upload/(?:v\d+/)?(.+)$', url)
-        if not m:
-            return None
-        after = m.group(1)
-        public_id = re.sub(r'\.[a-zA-Z0-9]+(\?.*)?$', '', after)
-        return public_id
-    except Exception:
-        return None
-
-# Helper: attach simple CORS headers if Origin present (used in your existing ATI code)
-def _attach_cors_headers(response, request):
-    origin = request.META.get('HTTP_ORIGIN')
-    if origin:
-        response["Access-Control-Allow-Origin"] = origin
-        response["Access-Control-Allow-Credentials"] = "true"
-    return response
-
-
-# GET /hesi/examslist/  -> list all Hesi exams (admin only)
-@require_http_methods(["GET"])
-def hesi_list_exams_view(request):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    exams = HesiExam.objects.all().order_by('-created_at')
-    data = []
-    for e in exams:
-        data.append({
-            "id": e.id,
-            "name": e.name,
-            "is_complete": e.is_complete,
-            "total_questions": e.total_questions,
-            "added_questions_count": e.questions.count(),
-            "created_at": e.created_at.isoformat()
-        })
-    resp = JsonResponse({"exams": data})
-    return _attach_cors_headers(resp, request)
-
-
-# GET /hesi/examslist/<int:exam_id>/full/ -> full Hesi exam + ordered questions + choices (admin only)
-@require_http_methods(["GET"])
-def hesi_get_exam_full_view(request, exam_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    exam = get_object_or_404(HesiExam, pk=exam_id)
-    questions = []
-    for q in exam.questions.all().order_by('order'):
-        choices = [
-            {"letter": chr(ord('A') + (c.index - 1)), "id": c.id, "text": c.text}
-            for c in q.choices.all().order_by('index')
-        ]
-        questions.append({
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": choices,
-            "correct_choice_letter": (chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None)
-        })
-
-    resp = JsonResponse({
-        "exam": {
-            "id": exam.id,
-            "name": exam.name,
-            "is_complete": exam.is_complete,
-            "total_questions": exam.total_questions,
-            "added_questions_count": exam.questions.count(),
-            "created_at": exam.created_at.isoformat(),
-        },
-        "questions": questions
-    })
-    return _attach_cors_headers(resp, request)
-
-
-# PUT /hesi/examslist/<int:exam_id>/update/ -> update HesiExam fields (name, total_questions) (admin only)
-@require_http_methods(["PUT"])
-def hesi_update_exam_view(request, exam_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    exam = get_object_or_404(HesiExam, pk=exam_id)
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    name = payload.get("name")
-    total_questions = payload.get("total_questions")
-
-    if name is not None:
-        name = str(name).strip()
-        if not name:
-            return JsonResponse({"error": "name cannot be empty"}, status=400)
-        # enforce unique exam name
-        if HesiExam.objects.exclude(pk=exam.pk).filter(name=name).exists():
-            return JsonResponse({"error": "Exam name already exists"}, status=400)
-        exam.name = name
-
-    if total_questions is not None:
-        try:
-            tq = int(total_questions)
-            if tq < 1:
-                return JsonResponse({"error": "total_questions must be >= 1"}, status=400)
-        except Exception:
-            return JsonResponse({"error": "Invalid total_questions"}, status=400)
-        # Block if there are already more questions than the new total
-        if exam.questions.count() > tq:
-            return JsonResponse({"error": "Cannot set total_questions lower than already added questions"}, status=400)
-        exam.total_questions = tq
-
-    exam.save()
-    resp = JsonResponse({"detail": "Exam updated", "exam": {
-        "id": exam.id,
-        "name": exam.name,
-        "total_questions": exam.total_questions,
-        "is_complete": exam.is_complete,
-        "added_questions_count": exam.questions.count()
-    }})
-    return _attach_cors_headers(resp, request)
-
-
-# PUT /hesi/questions/<int:question_id>/update/ -> update HesiQuestion + HesiChoices + correct choice (admin only)
-@require_http_methods(["PUT"])
-def hesi_update_question_view(request, question_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    q = get_object_or_404(HesiQuestion, pk=question_id)
-    try:
-        payload = json.loads(request.body.decode())
-    except Exception:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-
-    fmt = payload.get("format")
-    question_text = payload.get("question_text")
-    explanation = payload.get("explanation")
-    paragraph = payload.get("paragraph")
-    image_path = payload.get("image_path")
-    choices = payload.get("choices")
-    correct_letter = payload.get("correct_choice_letter")
-
-    if fmt is not None:
-        try:
-            fmt = int(fmt)
-            if fmt not in (1, 2, 3, 4):
-                return JsonResponse({"error": "Invalid format"}, status=400)
-            q.format = fmt
-        except Exception:
-            return JsonResponse({"error": "Invalid format value"}, status=400)
-
-    if question_text is not None:
-        q.question_text = question_text
-
-    if explanation is not None:
-        q.explanation = explanation
-
-    if paragraph is not None:
-        q.paragraph = paragraph
-
-    if image_path is not None:
-        q.image_path = image_path
-
-    # Run format-specific validation before touching choices
-    try:
-        q.full_clean()
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message_dict if hasattr(ve, 'message_dict') else str(ve)}, status=400)
-
-    # Update choices atomically: delete existing and create new ones
-    if choices is not None:
-        if not isinstance(choices, list) or len(choices) < 2 or len(choices) > 6:
-            return JsonResponse({"error": "Provide between 2 and 6 choices as individual strings"}, status=400)
-
-        q.correct_choice = None
-        q.save(update_fields=['correct_choice'])
-
-        q.choices.all().delete()
-
-        new_choice_objs = []
-        for idx, txt in enumerate(choices, start=1):
-            c = HesiChoice(question=q, text=txt, index=idx)
-            try:
-                c.full_clean()
-            except ValidationError as ve:
-                return JsonResponse({"error": f"Invalid choice at index {idx}: {ve}"}, status=400)
-            c.save()
-            new_choice_objs.append(c)
-
-        if correct_letter is not None:
-            if not isinstance(correct_letter, str) or len(correct_letter) != 1:
-                return JsonResponse({"error": "correct_choice_letter must be a single letter like 'A'."}, status=400)
-            letter = correct_letter.upper()
-            idx0 = ord(letter) - ord('A')
-            if idx0 < 0 or idx0 >= len(new_choice_objs):
-                return JsonResponse({"error": "correct_choice_letter out of range for provided choices."}, status=400)
-            q.correct_choice = new_choice_objs[idx0]
-        else:
-            q.correct_choice = None
-
-    # Final validation & save
-    try:
-        q.full_clean()
-        q.save()
-    except ValidationError as ve:
-        return JsonResponse({"error": ve.message_dict if hasattr(ve, 'message_dict') else str(ve)}, status=400)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-    choices_qs = q.choices.all().order_by('index')
-    resp = JsonResponse({
-        "detail": "Question updated",
-        "question": {
-            "id": q.id,
-            "order": q.order,
-            "format": q.format,
-            "paragraph": q.paragraph,
-            "image_path": q.image_path,
-            "question_text": q.question_text,
-            "explanation": q.explanation,
-            "choices": [
-                {"letter": chr(ord('A') + (c.index - 1)), "text": c.text, "id": c.id}
-                for c in choices_qs
-            ],
-            "correct_choice_letter": (chr(ord('A') + (q.correct_choice.index - 1)) if q.correct_choice else None)
-        }
-    })
-    return _attach_cors_headers(resp, request)
-
-
-# POST /hesi/questions/<int:question_id>/replace-image/  -> multipart file upload: replace image in Cloudinary and update question.image_path (admin only)
-@require_http_methods(["POST"])
-def hesi_replace_question_image_view(request, question_id):
-    err = _require_admin(request)
-    if err:
-        return err
-
-    q = get_object_or_404(HesiQuestion, pk=question_id)
-
-    file = request.FILES.get('file')
-    if not file:
-        return JsonResponse({"error": "No file provided"}, status=400)
-
-    try:
-        res = cloudinary.uploader.upload(file, folder="hesi_exams")
-        new_url = res.get('secure_url') or res.get('url')
-
-        old_path = q.image_path
-        if old_path:
-            public_id = _extract_cloudinary_public_id(old_path)
-            if public_id:
-                try:
-                    cloudinary.uploader.destroy(public_id, invalidate=True)
-                except Exception:
-                    # don't fail on destroy
-                    pass
-
-        q.image_path = new_url
-        q.save(update_fields=['image_path'])
-        resp = JsonResponse({"detail": "Image replaced", "image_path": new_url})
-        return _attach_cors_headers(resp, request)
-    except Exception as exc:
-        return JsonResponse({"error": str(exc)}, status=500)
-
-
-
-
-
-
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from .models import Review
@@ -1941,3 +816,693 @@ def plan_detail_view(request, plan_id):
         return _attach_cors_headers(JsonResponse({"detail": "Plan updated", "id": plan.id}, status=200), request)
     except Exception as exc:
         return _attach_cors_headers(JsonResponse({"error": str(exc)}, status=500), request)
+
+
+
+
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
+from django.views.decorators.http import require_GET
+from django.utils import timezone
+from django.db.models import Count
+
+from .models import Campaign, Announcement
+
+def _user_is_superadmin(user):
+    # Your custom property exists on the model
+    return user.is_authenticated and getattr(user, "is_superadmin", False)
+
+@login_required
+@require_GET
+def campaigns_insights_view(request):
+    if not _user_is_superadmin(request.user):
+        return HttpResponseForbidden(JsonResponse({"detail": "Requires superadmin"}))
+
+    qs = Campaign.objects.all().annotate(views_count=Count("views"))
+    results = []
+    for c in qs:
+        results.append({
+            "id": str(c.id),
+            "heading": c.heading,
+            "description": c.description,
+            "format": c.format,
+            "mediapath": c.mediapath,
+            "public_id": c.public_id,
+            "cloud_resource_type": c.cloud_resource_type,
+            "is_active": c.is_active,
+            "link": c.link,
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+            "updated_at": c.updated_at.isoformat() if getattr(c, "updated_at", None) else None,
+            "views_count": c.views_count or 0,
+        })
+
+    return JsonResponse({"results": results}, safe=False)
+
+
+@login_required
+@require_GET
+def announcements_insights_view(request):
+    if not _user_is_superadmin(request.user):
+        return HttpResponseForbidden(JsonResponse({"detail": "Requires superadmin"}))
+
+    qs = Announcement.objects.all().annotate(views_count=Count("seen_by"))
+    results = []
+    for a in qs:
+        results.append({
+            "id": str(a.id),
+            "format": a.format,
+            "mediapath": a.mediapath,
+            "public_id": a.public_id,
+            "is_active": a.is_active,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "views_count": a.views_count or 0,
+        })
+
+    return JsonResponse({"results": results}, safe=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, generics
+from .models import ATI, Question
+from .serializers import ATISerializer, QuestionSerializer
+import cloudinary.uploader
+
+class ATIListCreateAPIView(generics.ListCreateAPIView):
+    queryset = ATI.objects.all()
+    serializer_class = ATISerializer
+
+class ATIGetAPIView(generics.RetrieveAPIView):
+    queryset = ATI.objects.all()
+    serializer_class = ATISerializer
+
+class ATIGetAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Supports GET, PUT and PATCH for an ATI instance.
+    PATCH will update partial fields (e.g., completed).
+    """
+    queryset = ATI.objects.all()
+    serializer_class = ATISerializer
+
+class QuestionCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        import json
+
+        # Build a plain dict of non-file fields from request.data
+        data = {}
+        # request.data includes both POST fields and the parsed data for multipart
+        for key, val in request.data.items():
+            # skip uploaded files here (we'll take files from request.FILES)
+            if key == 'image':
+                continue
+            data[key] = val
+
+        # If choices / specialchoices / special_correct_order are JSON strings, parse them
+        for key in ('choices', 'specialchoices', 'special_correct_order'):
+            if key in data and isinstance(data.get(key), str):
+                try:
+                    data[key] = json.loads(data[key])
+                except Exception:
+                    # leave as-is and let serializer validation catch it
+                    pass
+
+        # handle image upload to Cloudinary (unchanged)
+        img = request.FILES.get('image')
+        if img:
+            try:
+                upload_result = cloudinary.uploader.upload(img)
+                data['image_url'] = upload_result.get('secure_url')
+            except Exception as e:
+                return Response({'detail': 'Cloudinary upload failed', 'error': str(e)},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = QuestionSerializer(data=data)
+        if serializer.is_valid():
+            question = serializer.save()
+            # persist image_url if set
+            if data.get('image_url'):
+                question.image_url = data['image_url']
+                question.save()
+            out = QuestionSerializer(question)
+            return Response(out.data, status=status.HTTP_201_CREATED)
+        # log errors to help debugging
+        print('QuestionSerializer errors:', serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class QuestionListAPIView(generics.ListAPIView):
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
+
+
+class QuestionRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    GET / PATCH for a single question.
+    Accepts multipart/form-data (image file optional) and JSON string fields for nested arrays.
+    """
+    queryset = Question.objects.all()
+    serializer_class = QuestionSerializer
+
+    def patch(self, request, *args, **kwargs):
+        # Build plain dict from request.data (exclude file objects)
+        data = {}
+        for key, val in request.data.items():
+            if key == 'image':
+                continue
+            data[key] = val
+
+        # parse JSON-ish fields if they were sent as strings
+        for key in ('choices', 'specialchoices', 'special_correct_order'):
+            if key in data and isinstance(data.get(key), str):
+                try:
+                    data[key] = json.loads(data[key])
+                except Exception:
+                    pass
+
+        # handle image upload replacement (optional)
+        img = request.FILES.get('image')
+        if img:
+            try:
+                upload_result = cloudinary.uploader.upload(img)
+                data['image_url'] = upload_result.get('secure_url')
+            except Exception as e:
+                return Response({'detail': 'Cloudinary upload failed', 'error': str(e)},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        # if cloudinary set image_url, persist on model too
+        if data.get('image_url'):
+            instance.image_url = data['image_url']
+            instance.save()
+        return Response(serializer.data)
+
+
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, generics
+from .models import HESI, HESIQuestion
+from .serializers import HESISerializer, HESIQuestionSerializer
+import cloudinary.uploader
+
+class HESIListCreateAPIView(generics.ListCreateAPIView):
+    queryset = HESI.objects.all()
+    serializer_class = HESISerializer
+
+class HESIGetAPIView(generics.RetrieveAPIView):
+    queryset = HESI.objects.all()
+    serializer_class = HESISerializer
+
+class HESIGetAPIView(generics.RetrieveUpdateAPIView):
+    """
+    Supports GET, PUT and PATCH for an ATI instance.
+    PATCH will update partial fields (e.g., completed).
+    """
+    queryset = HESI.objects.all()
+    serializer_class = HESISerializer
+
+class HESIQuestionCreateAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        import json
+
+        # Build a plain dict of non-file fields from request.data
+        data = {}
+        # request.data includes both POST fields and the parsed data for multipart
+        for key, val in request.data.items():
+            # skip uploaded files here (we'll take files from request.FILES)
+            if key == 'image':
+                continue
+            data[key] = val
+
+        # If choices / specialchoices / special_correct_order are JSON strings, parse them
+        for key in ('choices', 'specialchoices', 'special_correct_order'):
+            if key in data and isinstance(data.get(key), str):
+                try:
+                    data[key] = json.loads(data[key])
+                except Exception:
+                    # leave as-is and let serializer validation catch it
+                    pass
+
+        # handle image upload to Cloudinary (unchanged)
+        img = request.FILES.get('image')
+        if img:
+            try:
+                upload_result = cloudinary.uploader.upload(img)
+                data['image_url'] = upload_result.get('secure_url')
+            except Exception as e:
+                return Response({'detail': 'Cloudinary upload failed', 'error': str(e)},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = HESIQuestionSerializer(data=data)
+        if serializer.is_valid():
+            question = serializer.save()
+            # persist image_url if set
+            if data.get('image_url'):
+                question.image_url = data['image_url']
+                question.save()
+            out = HESIQuestionSerializer(question)
+            return Response(out.data, status=status.HTTP_201_CREATED)
+        # log errors to help debugging
+        print('QuestionSerializer errors:', serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HESIQuestionListAPIView(generics.ListAPIView):
+    queryset = HESIQuestion.objects.all()
+    serializer_class = HESIQuestionSerializer
+
+
+class HESIQuestionRetrieveUpdateAPIView(generics.RetrieveUpdateAPIView):
+    """
+    GET / PATCH for a single question.
+    Accepts multipart/form-data (image file optional) and JSON string fields for nested arrays.
+    """
+    queryset = HESIQuestion.objects.all()
+    serializer_class = HESIQuestionSerializer
+
+    def patch(self, request, *args, **kwargs):
+        # Build plain dict from request.data (exclude file objects)
+        data = {}
+        for key, val in request.data.items():
+            if key == 'image':
+                continue
+            data[key] = val
+
+        # parse JSON-ish fields if they were sent as strings
+        for key in ('choices', 'specialchoices', 'special_correct_order'):
+            if key in data and isinstance(data.get(key), str):
+                try:
+                    data[key] = json.loads(data[key])
+                except Exception:
+                    pass
+
+        # handle image upload replacement (optional)
+        img = request.FILES.get('image')
+        if img:
+            try:
+                upload_result = cloudinary.uploader.upload(img)
+                data['image_url'] = upload_result.get('secure_url')
+            except Exception as e:
+                return Response({'detail': 'Cloudinary upload failed', 'error': str(e)},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        # if cloudinary set image_url, persist on model too
+        if data.get('image_url'):
+            instance.image_url = data['image_url']
+            instance.save()
+        return Response(serializer.data)
+
+
+
+
+
+
+
+
+# api/views.py
+import uuid
+from datetime import datetime, timezone as dt_timezone
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.http import JsonResponse, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseServerError
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt, csrf_protect
+from django.views.decorators.http import require_http_methods
+from django.utils import timezone
+from  django.templatetags.static import static  
+from django.db import transaction
+
+from .models import Subscription
+
+
+
+@require_http_methods(["GET"])
+def subscriptions_list(request):
+    """
+    Returns JSON with:
+      - counts: total, active_count, expired_count
+      - subscriptions: list with id, user (email, first_name, last_name), plan info, start_date, finish_date, is_active, days_remaining
+    """
+    now = timezone.now()
+    qs = Subscription.objects.select_related("user", "plan").order_by("-created_at")
+    items = []
+    active_count = 0
+    expired_count = 0
+
+    for s in qs:
+        is_active = s.finish_date > now
+        if is_active:
+            active_count += 1
+        else:
+            expired_count += 1
+
+        # username prefer full name else email
+        user = s.user
+        username = (user.first_name + " " + user.last_name).strip() or user.email
+
+        # days remaining (if negative -> 0)
+        delta = s.finish_date - now
+        days_remaining = max(delta.days, 0)
+
+        items.append({
+            "id": str(s.id),
+            "user": {
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "username": username,
+            },
+            "plan": {
+                "id": s.plan.id if hasattr(s.plan, "id") else None,
+                "exam_type": s.plan.get_exam_type_display() if hasattr(s.plan, "get_exam_type_display") else getattr(s.plan, "exam_type", None),
+                "title": getattr(s.plan, "title", ""),
+                "duration_days": getattr(s.plan, "duration_days", None),
+                "price": str(getattr(s.plan, "price", "")),
+                "currency": getattr(s.plan, "currency", "USD"),
+            },
+            "start_date": s.start_date.isoformat(),
+            "finish_date": s.finish_date.isoformat(),
+            "is_active": is_active,
+            "days_remaining": days_remaining,
+            "created_at": s.created_at.isoformat(),
+        })
+
+    return JsonResponse({
+        "total": qs.count(),
+        "active_count": active_count,
+        "expired_count": expired_count,
+        "subscriptions": items,
+    }, safe=False)
+
+
+@require_http_methods(["DELETE"])
+@csrf_protect
+def subscription_delete(request, id):
+    """
+    Sends notification email to subscription user, then deletes the subscription.
+    Expects CSRF token cookie/header present (frontend will call /csrf/ first).
+    """
+    try:
+        sub = get_object_or_404(Subscription, id=id)
+    except Exception:
+        return HttpResponseBadRequest("Subscription not found")
+
+    # Build absolute logo URL using static files (ensure staticfiles is configured)
+    try:
+        logo_relative = static("images/bv.png")
+    except Exception:
+        # fallback to attempt building path manually - ensure STATIC_URL is served
+        logo_relative = settings.STATIC_URL + "images/bv.png"
+
+    logo_url = request.build_absolute_uri(logo_relative)
+
+    context = {
+        "site_name": "Rushhourcamp",
+        "user_first_name": sub.user.first_name or "",
+        "user_last_name": sub.user.last_name or "",
+        "user_email": sub.user.email,
+        "plan_title": getattr(sub.plan, "title", ""),
+        "plan_exam_type": getattr(sub.plan, "exam_type", ""),
+        "start_date": sub.start_date,
+        "finish_date": sub.finish_date,
+        "logo_url": logo_url,
+    }
+
+    # Attempt to render HTML template. Template should be located at: api/templates/email/subscription_cancelled.html
+    try:
+        html_body = render_to_string("email/subscription_cancelled.html", context)
+    except Exception as e:
+        # If render fails, create a simple fallback html
+        html_body = f"""
+        <html>
+          <body>
+            <p>Dear {context['user_first_name'] or context['user_email']},</p>
+            <p>Your subscription ({context['plan_title']}) has been cancelled and is no longer active.</p>
+            <p>Regards,<br/>{context['site_name']}</p>
+            <img src="{logo_url}" alt="{context['site_name']} logo" style="max-width:120px"/>
+          </body>
+        </html>
+        """
+
+    subject = f"{context['site_name']} — Subscription cancelled"
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@localhost")
+    to_email = [sub.user.email]
+
+    try:
+        # Use EmailMultiAlternatives to send HTML content
+        message = EmailMultiAlternatives(subject=subject, body=html_body, from_email=from_email, to=to_email)
+        message.attach_alternative(html_body, "text/html")
+        message.send()
+    except Exception as e:
+        return HttpResponseServerError(f"Failed to send email: {str(e)}")
+
+    # After email successfully sent, delete the subscription
+    try:
+        with transaction.atomic():
+            sub.delete()
+    except Exception as e:
+        return HttpResponseServerError(f"Failed to delete subscription: {str(e)}")
+
+    return JsonResponse({"detail": "Subscription deleted and user notified"})
+
+
+
+
+
+
+
+
+import json
+from decimal import Decimal
+from django.http import JsonResponse, HttpResponseNotAllowed
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt  # not used; client will send CSRF cookie
+from django.shortcuts import get_object_or_404
+from .models import Plan, Feature
+from django.core.exceptions import ValidationError
+
+def _serialize_plan(plan):
+    return {
+        "id": str(plan.id),
+        "exam_type": plan.exam_type,
+        "exam_display": plan.get_exam_type_display(),
+        "title": plan.title,
+        "price": str(plan.price),
+        "currency": plan.currency,
+        "duration_days": plan.duration_days,
+        "active": bool(plan.active),
+        "features": [{"id": f.id, "name": f.name, "slug": f.slug} for f in plan.features.all()],
+        "created_at": plan.created_at.isoformat() if plan.created_at else None,
+        "updated_at": plan.updated_at.isoformat() if plan.updated_at else None,
+    }
+
+@login_required
+@require_http_methods(["GET", "PATCH"])
+def plan_edit_api(request, plan_id):
+    """
+    GET: return plan details
+    PATCH: update plan fields - accepts JSON body like:
+      {
+        "title": "30 Days Access",
+        "price": "12.50",
+        "currency": "USD",
+        "duration_days": 30,
+        "active": true,
+        "features": ["Feature A", "Feature B"]  # array of strings (names)
+      }
+    """
+    user = request.user
+    if not getattr(user, "is_superadmin", False):
+        return JsonResponse({"detail": "Forbidden: superadmin only."}, status=403)
+
+    plan = get_object_or_404(Plan, pk=plan_id)
+
+    if request.method == "GET":
+        return JsonResponse(_serialize_plan(plan))
+
+    # PATCH
+    try:
+        body = json.loads(request.body.decode("utf-8") or "{}")
+    except Exception:
+        return JsonResponse({"error": "Invalid JSON."}, status=400)
+
+    changed = False
+
+    # Allowed fields to update
+    if "title" in body:
+        plan.title = body["title"] or plan.title
+        changed = True
+
+    if "price" in body:
+        try:
+            plan.price = Decimal(str(body["price"]))
+            changed = True
+        except Exception:
+            return JsonResponse({"error": "Invalid price value."}, status=400)
+
+    if "currency" in body:
+        plan.currency = (body["currency"] or plan.currency).upper()
+        changed = True
+
+    if "duration_days" in body:
+        try:
+            dd = int(body["duration_days"])
+            plan.duration_days = dd
+            changed = True
+        except Exception:
+            return JsonResponse({"error": "Invalid duration_days."}, status=400)
+
+    if "active" in body:
+        plan.active = bool(body["active"])
+        changed = True
+
+    # Handle features: expect array of names (strings)
+    if "features" in body:
+        f_list = body.get("features") or []
+        if not isinstance(f_list, list):
+            return JsonResponse({"error": "features must be an array of names."}, status=400)
+
+        # Create or get features by name; keep order
+        new_features = []
+        for name in f_list:
+            nm = (name or "").strip()
+            if not nm:
+                continue
+            feature, _ = Feature.objects.get_or_create(name=nm)
+            new_features.append(feature)
+
+        plan.features.set(new_features)
+        changed = True
+
+    if changed:
+        try:
+            plan.full_clean()
+            plan.save()
+        except ValidationError as e:
+            return JsonResponse({"error": e.message_dict}, status=400)
+        return JsonResponse(_serialize_plan(plan))
+    else:
+        return JsonResponse({"detail": "No changes detected."})
+
+
+
+
+
+
+
+
+
+
+
+
+
+import json
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
+from .models import ATI, HESI
+
+# Use this exact function as requested:
+@ensure_csrf_cookie
+def csrf_token_view(request):
+    # ensures csrftoken cookie is set; returns a small JSON resp
+    return JsonResponse({"detail": "CSRF cookie set"})
+
+
+# Helper to map type string -> model
+VALID_TYPES = {
+    "ati": ATI,
+    "hesi": HESI,
+}
+
+
+def _get_model_for_type(type_str):
+    if not type_str:
+        return None
+    return VALID_TYPES.get(type_str.lower())
+
+
+@require_http_methods(["GET"])
+def exams_list(request):
+    """
+    GET /api/exams/?type=ati|hesi
+    Returns list of exams for given type.
+    """
+    type_str = request.GET.get("type")
+    Model = _get_model_for_type(type_str)
+    if Model is None:
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+
+    exams = Model.objects.all().order_by('-id')
+    data = [
+        {"id": str(e.id), "name": e.name, "isfree": getattr(e, "isfree", False), "completed": getattr(e, "completed", False)}
+        for e in exams
+    ]
+    return JsonResponse(data, safe=False)
+
+
+@require_http_methods(["DELETE"])
+def exams_delete(request, pk):
+    """
+    DELETE /api/exams/<uuid:pk>/?type=ati|hesi
+    Deletes the exam (cascade deletes related content via models).
+    """
+    type_str = request.GET.get("type")
+    Model = _get_model_for_type(type_str)
+    if Model is None:
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+
+    exam = get_object_or_404(Model, pk=pk)
+    exam.delete()
+    return JsonResponse({"detail": f"{type_str.upper()} exam deleted", "id": str(pk)})
+
+
+@require_http_methods(["POST"])
+def exams_set_free(request, pk):
+    """
+    POST /api/exams/<uuid:pk>/set_free/?type=ati|hesi
+    Body (optional): {"isfree": true/false} (defaults to true if omitted)
+    """
+    type_str = request.GET.get("type")
+    Model = _get_model_for_type(type_str)
+    if Model is None:
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+
+    exam = get_object_or_404(Model, pk=pk)
+    try:
+        payload = json.loads(request.body.decode() or "{}")
+    except json.JSONDecodeError:
+        return HttpResponseBadRequest("Invalid JSON")
+
+    isfree = payload.get("isfree", True)
+    exam.isfree = bool(isfree)
+    exam.save(update_fields=["isfree"])
+    return JsonResponse({"detail": f"{type_str.upper()} exam updated", "id": str(pk), "isfree": exam.isfree})

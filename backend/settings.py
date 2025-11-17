@@ -172,8 +172,8 @@ CSRF_COOKIE_HTTPONLY = False  # we need JS to read csrftoken cookie for X-CSRFTo
 # Email (Mailtrap sandbox settings you provided)
 # Looking to send emails in production? Check out our Email API/SMTP product!
 EMAIL_HOST = 'sandbox.smtp.mailtrap.io'
-EMAIL_HOST_USER = 'cc33401ec1ef10'
-EMAIL_HOST_PASSWORD = 'df7f7be53b16c8'
+EMAIL_HOST_USER = '3c42b5b6c55617'
+EMAIL_HOST_PASSWORD = '2fbfd51da023f7'
 EMAIL_PORT = '2525'
 DEFAULT_FROM_EMAIL = "noreply@rushhourcamp.local"
 
@@ -197,7 +197,6 @@ cloudinary.config(
     api_key=CLOUDINARY['api_key'],
     api_secret=CLOUDINARY['api_secret'],
 )
-
 
 PAYPAL_CLIENT_ID="AUWJugJx-gOjNyU8DWLmMLqK92LGJ5K8HXtrhz3DZwcelrL6B8oCfR007wlB3p3K69-uR8wFHxMpWxmT"      # server-side client id (not public)
 PAYPAL_SECRET="EOMx34pwJaJbuY8Rbj6wJNgQfqlPMasnWWT1Ot7Y4RL9NdwnrXiK28zZwf7KZzsJZL4I2iNQS7muQD0k"

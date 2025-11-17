@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin: 20px auto;
+        }
+        .header { 
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white; 
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
+        .header::before {
+            content: "🔥";
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 15px;
+        }
+        .badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            transform: rotate(15deg);
+        }
+        .content { 
+            padding: 40px 30px; 
+            background: white;
+            font-size: 16px;
+        }
+        .footer { 
+            text-align: center; 
+            padding: 30px 20px; 
+            font-size: 14px; 
+            color: #666;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        .offer-card {
+            background: linear-gradient(135deg, #fff9c4 0%, #ffecb3 100%);
+            border: 2px dashed #ffa000;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .offer-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            .header {
+                padding: 30px 15px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .header::before {
+                font-size: 3rem;
+            }
+            .badge {
+                position: relative;
+                top: 0;
+                right: 0;
+                display: inline-block;
+                margin-bottom: 15px;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="badge">SPECIAL OFFER 🎁</div>
+            <h1>Exclusive Promotion! 💎</h1>
+            <p>Limited time offer just for you</p>
+        </div>
+        <div class="content">
+            {{ message|linebreaks }}
+            
+            <div class="offer-card">
+                <div class="offer-icon">🎯</div>
+                <h3>Limited Time Offer! ⏰</h3>
+                <p>Don't miss this amazing opportunity to save big on our premium services.</p>
+                <p><strong>Use code: RUSHCAMP24</strong></p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>⚡ Offer ends soon! Don't miss out!</p>
+            <p>📞 Call us today: +1 (555) 123-4567</p>
+            <p>&copy; 2024 RushHour Camp. All rights reserved. 🏕️</p>
+        </div>
+    </div>
+</body>
+</html>

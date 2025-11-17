@@ -27,13 +27,14 @@ def build_logo_url(request):
     return request.build_absolute_uri(logo_static_path)
 
 
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+
 def send_verification_email(request, to_email, code, lifetime_minutes=10):
-    """
-    Render and send verification email using templates/email/verification_email.html
-    """
     logo_url = build_logo_url(request)
     subject = "Your RushHourCamp verification code"
     from_email = settings.DEFAULT_FROM_EMAIL
+
     context = {
         "code": code,
         "email": to_email,
@@ -47,8 +48,13 @@ def send_verification_email(request, to_email, code, lifetime_minutes=10):
     text_content = f"Your verification code is {code}. It expires in {lifetime_minutes} minutes."
 
     msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+    # ensure message header matches envelope sender exactly
+    msg.extra_headers = msg.extra_headers or {}
+    msg.extra_headers['From'] = from_email
+
     msg.attach_alternative(html_content, "text/html")
     msg.send(fail_silently=False)
+
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -813,112 +819,350 @@ def subscriptions_view(request):
 
 
 
-#----------------------------------------------------------------------------------------------------------------------------------
-# EXAMS FOR USERS START HERE
-# ---------------------------------------------------------------------------------------------------------------------------------
+import os
+import uuid
+from datetime import timedelta
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils import timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
+from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.decorators import api_view, permission_classes
+
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+
+from .serializers import (
+    UserProfileSerializer,
+    UpdateNameSerializer,
+    SendVerificationSerializer,
+    VerifyCodeSerializer,
+    ResetPasswordSerializer
+)
+from .permissions import IsRegularUser
+from .models import PasswordResetCode
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+# Helper: attach embedded image (logo) and render html email
+def send_password_code_email(user, code):
+    subject = "Your verification code"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    to = [user.email]
+
+    # template: api/templates/email/password_verification.html
+    html_content = render_to_string("email/password_verification.html", {"user": user, "code": code})
+    text_content = f"Hi {user.first_name or user.email}, your verification code is {code}. It expires shortly."
+
+    msg = EmailMultiAlternatives(subject, text_content, from_email, to)
+    msg.attach_alternative(html_content, "text/html")
+
+    # Attach app icon inline if file exists
+    icon_path = os.path.join(settings.BASE_DIR, "api", "static", "images", "bv.png")
+    if os.path.exists(icon_path):
+        from email.mime.image import MIMEImage
+        with open(icon_path, "rb") as f:
+            img = MIMEImage(f.read())
+            img.add_header("Content-ID", "<bv.png>")
+            img.add_header("Content-Disposition", "inline", filename="bv.png")
+            msg.attach(img)
+
+    msg.send(fail_silently=False)
+
+# Profile view
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class ProfileView(RetrieveUpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsRegularUser]
+    serializer_class = UserProfileSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    def patch(self, request, *args, **kwargs):
+        # Only allow updating first_name and last_name
+        serializer = UpdateNameSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = request.user
+        data = serializer.validated_data
+        if "first_name" in data:
+            user.first_name = data.get("first_name", "")
+        if "last_name" in data:
+            user.last_name = data.get("last_name", "")
+        user.save()
+        return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
+
+# Send verification code
+class SendPasswordCodeView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsRegularUser]
+
+    def post(self, request):
+        user = request.user
+        # Create code object
+        pr = PasswordResetCode.create_for_user(user, expiry_minutes=10)
+        # Email the code
+        send_password_code_email(user, pr.code)
+        return Response({"detail": "Verification code sent to your email."}, status=status.HTTP_200_OK)
+
+# Verify code -> return reset_token
+class VerifyPasswordCodeView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsRegularUser]
+
+    def post(self, request):
+        serializer = VerifyCodeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.validated_data["code"].strip()
+        user = request.user
+
+        try:
+            pr = PasswordResetCode.objects.filter(user=user, code=code, used=False).latest("created_at")
+        except PasswordResetCode.DoesNotExist:
+            return Response({"detail": "Invalid code."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pr.is_expired():
+            return Response({"detail": "Code expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # mark used and issue reset_token
+        pr.used = True
+        pr.reset_token = uuid.uuid4()
+        pr.save()
+        return Response({"reset_token": str(pr.reset_token)}, status=status.HTTP_200_OK)
+
+# Reset password using reset_token
+class ResetPasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsRegularUser]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reset_token = serializer.validated_data["reset_token"]
+        new_password = serializer.validated_data["new_password"]
+
+        try:
+            pr = PasswordResetCode.objects.get(reset_token=reset_token)
+        except PasswordResetCode.DoesNotExist:
+            return Response({"detail": "Invalid reset token."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if pr.is_expired():
+            return Response({"detail": "Reset token expired."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = pr.user
+        user.set_password(new_password)
+        user.save()
+
+        # invalidate token
+        pr.reset_token = None
+        pr.used = True
+        pr.save()
+
+        return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+
+
+
+
+from datetime import timedelta
 from django.utils import timezone
-from django.contrib.auth import logout
+from django.db import transaction
+from django.db.models import Q, OuterRef, Subquery
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status, permissions, authentication
+from .models import Announcement, AnnouncementSeen, Campaign, CampaignView
+from .serializers import AnnouncementSerializer, CampaignSerializers
 
+class IsRegularUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and getattr(request.user, "is_regular_user", False))
 
-from .models import Subscription, Exam, HesiExam 
-
-
-class SubscriptionStatusAPIView(APIView):
-    """
-    GET /api/subscription/status/
-    Returns whether the current session user has an active subscription.
-    If user has ATI_TEAS_7 subscription, returns exams list with total_questions.
-    If user has HESI_A2 subscription, returns Hesi exams list with total_questions.
-    Other exam types are returned with an empty exams list for now (pass).
-    """
-    permission_classes = []  # session-based auth handled inside
+class MarketingQueueView(APIView):
+    permission_classes = [IsRegularUser]
 
     def get(self, request, format=None):
-        user = getattr(request, "user", None)
+        user = request.user
         now = timezone.now()
 
-        # Not authenticated -> 401 with redirect hint
-        if not (user and user.is_authenticated and user.is_active):
-            return Response(
-                {"authenticated": False, "redirect": "/user/signin/"},
-                status=status.HTTP_401_UNAUTHORIZED
+        # Announcements: only active, not yet seen by this user
+        # use reverse relation 'seen_by' from model: AnnouncementSeen with related_name="seen_by"
+        announcements_qs = Announcement.objects.filter(is_active=True).exclude(seen_by__user=user)
+        announcements = AnnouncementSerializer(announcements_qs, many=True).data
+
+        # Campaigns: only active campaigns and either:
+        #  - no CampaignView exists for this user+campaign, or
+        #  - the existing CampaignView.next_time_to_show <= now (i.e. ready to be shown again)
+        # We'll get all active campaigns and filter per-item in Python for clarity
+        campaigns_to_show = []
+        active_campaigns = Campaign.objects.filter(is_active=True).order_by('-created_at')
+        for campaign in active_campaigns:
+            if user is None:
+                # if somehow unauthenticated (shouldn't happen due to permission), skip
+                continue
+
+            cv = CampaignView.objects.filter(campaign=campaign, user=user).order_by('-seen_at').first()
+            if cv is None:
+                # not seen by user yet -> show immediately
+                campaigns_to_show.append(campaign)
+            else:
+                # show only if next_time_to_show is set and <= now, or if it's None but seen_at + 7min <= now
+                if cv.next_time_to_show is not None:
+                    if cv.next_time_to_show <= now:
+                        campaigns_to_show.append(campaign)
+                else:
+                    # fallback: seen_at + 7 minutes
+                    if cv.seen_at + timedelta(minutes=7) <= now:
+                        campaigns_to_show.append(campaign)
+
+        campaigns = CampaignSerializers(campaigns_to_show, many=True).data
+
+        # return both lists so frontend can merge into a queue. The frontend can prefer announcements first, or mix.
+        return Response({
+            "announcements": announcements,
+            "campaigns": campaigns,
+        })
+
+
+class AnnouncementSeenView(APIView):
+    """
+    Called when an announcement has been shown to the user (immediately recorded).
+    """
+    permission_classes = [IsRegularUser]
+
+    def post(self, request, format=None):
+        user = request.user
+        announcement_id = request.data.get("announcement_id")
+        if not announcement_id:
+            return Response({"detail": "announcement_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            announcement = Announcement.objects.get(pk=announcement_id, is_active=True)
+        except Announcement.DoesNotExist:
+            return Response({"detail": "announcement not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Create AnnouncementSeen; unique_together prevents duplicates
+        obj, created = AnnouncementSeen.objects.get_or_create(user=user, announcement=announcement)
+        return Response({"created": created})
+
+
+class CampaignSeenView(APIView):
+    """
+    Called when a campaign is shown to a user. Updates or creates CampaignView
+    and sets next_time_to_show = now + 7 minutes (so it won't be shown again for 7 minutes).
+    """
+    permission_classes = [IsRegularUser]
+
+    def post(self, request, format=None):
+        user = request.user
+        campaign_id = request.data.get("campaign_id")
+        ip_address = request.META.get("REMOTE_ADDR")
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+
+        if not campaign_id:
+            return Response({"detail": "campaign_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            campaign = Campaign.objects.get(pk=campaign_id, is_active=True)
+        except Campaign.DoesNotExist:
+            return Response({"detail": "campaign not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        now = timezone.now()
+        next_time = now + timedelta(minutes=7)
+
+        # Use atomic get_or_create -> update
+        with transaction.atomic():
+            cv, created = CampaignView.objects.get_or_create(campaign=campaign, user=user, defaults={
+                "ip_address": ip_address,
+                "user_agent": user_agent,
+                "seen_at": now,
+                "next_time_to_show": next_time,
+            })
+            if not created:
+                # update existing
+                cv.seen_at = now
+                cv.ip_address = ip_address or cv.ip_address
+                cv.user_agent = user_agent or cv.user_agent
+                cv.next_time_to_show = next_time
+                cv.save(update_fields=["seen_at", "ip_address", "user_agent", "next_time_to_show"])
+
+        return Response({"created": created, "next_time_to_show": next_time})
+
+
+
+
+
+
+
+
+
+
+from datetime import timedelta
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST, require_GET
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db import transaction
+
+from .models import Plan, Subscription, ExamType, FreeTrial
+
+
+@login_required
+@require_POST
+def subscribe_trial(request):
+    """
+    Create trial subscriptions (7 days) for the currently authenticated user
+    for ATI_TEAS_7 and HESI_A2. Also records the user's email in FreeTrial.
+    If the user/email already has a FreeTrial entry, returns 409.
+    """
+    user = request.user
+    now = timezone.now()
+    duration_days = 7
+    exam_types = [ExamType.ATI_TEAS_7, ExamType.HESI_A2]
+
+    # If email is already in FreeTrial -> disallow
+    if FreeTrial.objects.filter(email__iexact=user.email).exists():
+        return JsonResponse({"detail": "Free trial already used for this account/email."}, status=409)
+
+    created_subs = []
+
+    with transaction.atomic():
+        # create or ensure FreeTrial entry first to reserve trial
+        free_trial = FreeTrial.objects.create(email=user.email, user=user)
+
+        for exam in exam_types:
+            # get or create a trial plan (price=0)
+            plan = Plan.get_or_create_trial(exam, days=duration_days)
+
+            # create subscription record
+            subscription = Subscription.objects.create(
+                user=user,
+                plan=plan,
+                start_date=now,
+                finish_date=now + timedelta(days=duration_days),
+                amount=0,
+                currency=plan.currency,
             )
 
-        # Defensive session check (copying pattern used elsewhere)
-        session_uid = request.session.get("_auth_user_id")
-        if session_uid is None or str(session_uid) != str(user.pk):
-            try:
-                logout(request)
-            except Exception:
-                pass
-            return Response({"authenticated": False, "detail": "Session mismatch."}, status=status.HTTP_401_UNAUTHORIZED)
+            created_subs.append({
+                "subscription_id": str(subscription.id),
+                "plan_id": plan.id and str(plan.id),
+                "exam_type": plan.get_exam_type_display(),
+                "start_date": subscription.start_date.isoformat(),
+                "finish_date": subscription.finish_date.isoformat(),
+            })
 
-        # Ensure user is regular user
-        if not getattr(user, "is_regular_user", False):
-            return Response({"authenticated": False, "detail": "Forbidden: not a regular user."}, status=status.HTTP_403_FORBIDDEN)
+    return JsonResponse({"status": "ok", "created": created_subs, "free_trial_recorded": str(free_trial.id)}, status=201)
 
-        # Find active subscriptions (where now is between start_date and finish_date)
-        active_subs = Subscription.objects.filter(user=user, start_date__lte=now, finish_date__gt=now)
 
-        if not active_subs.exists():
-            return Response({"has_subscription": False}, status=status.HTTP_200_OK)
-
-        # Collect exam types and prepare details
-        exam_type_map = {}
-        for s in active_subs.select_related("plan"):
-            exam_type = getattr(s.plan, "exam_type", None)
-            if not exam_type:
-                continue
-            if exam_type not in exam_type_map:
-                exam_type_map[exam_type] = {"exam_type": exam_type, "exams": []}
-
-        # For ATI_TEAS_7, return Exam rows + question counts
-        if "ATI_TEAS_7" in exam_type_map:
-            exams = Exam.objects.filter(is_complete=True).order_by("name")
-            exam_list = []
-            for e in exams:
-                try:
-                    total_q = e.recalc_current_question_count()
-                except Exception:
-                    total_q = e.questions.count()
-                exam_list.append({
-                    "id": str(e.pk),
-                    "name": e.name,
-                    "total_questions": total_q,
-                })
-            exam_type_map["ATI_TEAS_7"]["exams"] = exam_list
-
-        # For HESI_A2, return HesiExam rows + question counts
-        if "HESI_A2" in exam_type_map:
-            hesi_exams = HesiExam.objects.filter(is_complete=True).order_by("name")
-            hesi_list = []
-            for he in hesi_exams:
-                try:
-                    total_q = he.recalc_current_question_count()
-                except Exception:
-                    total_q = he.questions.count()
-                hesi_list.append({
-                    "id": str(he.pk),
-                    "name": he.name,
-                    "total_questions": total_q,
-                })
-            exam_type_map["HESI_A2"]["exams"] = hesi_list
-
-        # For other exam types: leave pass (empty list) for now
-        for et in list(exam_type_map.keys()):
-            if et not in ("ATI_TEAS_7", "HESI_A2"):
-                exam_type_map[et]["exams"] = []
-                exam_type_map[et]["pass"] = True
-
-        # Build response
-        resp = {
-            "has_subscription": True,
-            "exam_types": list(exam_type_map.keys()),
-            "details": list(exam_type_map.values()),
-        }
-
-        return Response(resp, status=status.HTTP_200_OK)
+@login_required
+@require_GET
+def can_use_free_trial(request):
+    """
+    Return whether the session user is allowed to start a free trial.
+    """
+    user = request.user
+    allowed = not FreeTrial.objects.filter(email__iexact=user.email).exists()
+    return JsonResponse({"allowed": allowed}, status=200)

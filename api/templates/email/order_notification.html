@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .header h1:before {
+            content: "✅";
+            font-size: 32px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .order-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .detail-row {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .icon {
+            font-size: 20px;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .label {
+            font-weight: 600;
+            color: #555;
+            width: 100px;
+        }
+        
+        .value {
+            flex: 1;
+            color: #333;
+        }
+        
+        .highlight {
+            font-weight: 700;
+            color: #2575fc;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 480px) {
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .label {
+                width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>New Order Placed</h1>
+            <p>Thank you for your purchase!</p>
+        </div>
+        
+        <div class="content">
+            <div class="order-details">
+                <div class="detail-row">
+                    <span class="icon">📄</span>
+                    <span class="label">PDF:</span>
+                    <span class="value highlight">{{ pdf.name }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="icon">👤</span>
+                    <span class="label">Buyer:</span>
+                    <span class="value">{{ buyer_email }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="icon">💰</span>
+                    <span class="label">Amount:</span>
+                    <span class="value highlight">{{ amount }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="icon">🆔</span>
+                    <span class="label">Order ID:</span>
+                    <span class="value">{{ order_id }}</span>
+                </div>
+            </div>
+            
+            <div class="detail-row" style="border-bottom: none; padding: 0; justify-content: center;">
+                <span class="icon">⏰</span>
+                <span class="label" style="width: auto;">Time:</span>
+                <span class="value">{{ timestamp }}</span>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>If you have any questions, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>
