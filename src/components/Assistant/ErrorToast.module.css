@@ -1,0 +1,121 @@
+/* ErrorToast.module.css */
+.wrapper {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10000;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #7f1d1d;
+  box-shadow: 
+    0 10px 25px rgba(127, 29, 29, 0.15),
+    0 5px 10px rgba(127, 29, 29, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  min-width: 320px;
+  max-width: 400px;
+  transform: translateX(100%);
+  opacity: 0;
+  animation: slideInRight 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  overflow: hidden;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #dc2626;
+  color: white;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.message {
+  font-size: 13px;
+  color: #b91c1c;
+  line-height: 1.4;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.close:hover {
+  background: rgba(220, 38, 38, 0.1);
+  transform: scale(1.1);
+}
+
+.progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  animation: progress 6s linear forwards;
+}
+
+@keyframes slideInRight {
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 640px) {
+  .wrapper {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+  }
+  
+  .toast {
+    min-width: auto;
+    max-width: none;
+    transform: translateY(100%);
+    animation: slideInUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+}
+
+@keyframes slideInUp {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

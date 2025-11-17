@@ -1,0 +1,136 @@
+/* components/ATITeas.module.css */
+.container {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  padding: 1.5rem;
+  color: white;
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.container:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+  opacity: 0.9;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.stats {
+  space-y: 1rem;
+}
+
+.statItem {
+  margin-bottom: 1.2rem;
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.statIcon {
+  font-size: 1rem;
+  margin-right: 0.7rem;
+  opacity: 0.8;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.growth {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+}
+
+.growthText {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a3e4a3;
+  background: rgba(163, 228, 163, 0.1);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1.2rem;
+  }
+  
+  .header {
+    margin-bottom: 1.2rem;
+  }
+  
+  .icon {
+    font-size: 1.8rem;
+  }
+  
+  .title {
+    font-size: 1.4rem;
+  }
+  
+  .statValue {
+    font-size: 1.3rem;
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  .header {
+    margin-bottom: 1rem;
+  }
+  
+  .icon {
+    font-size: 1.6rem;
+    margin-right: 0.8rem;
+  }
+  
+  .title {
+    font-size: 1.3rem;
+  }
+  
+  .statValue {
+    font-size: 1.2rem;
+  }
+}
+
+.statGrowth { margin-top: 8px; display:flex; align-items:center; gap:8px; }

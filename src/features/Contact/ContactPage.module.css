@@ -1,0 +1,691 @@
+/* ContactPage.module.css */
+
+/* Base Styles with 400 font weight */
+.contactPage {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #334155;
+  margin-top: 80px;
+}
+
+.pageContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem 4rem;
+}
+
+/* Hero Section */
+.contactHero {
+  position: relative;
+  padding: 4rem 2rem 6rem;
+  background: #00357b;
+  overflow: hidden;
+}
+
+.heroBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+
+.heroWave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none'%3E%3Cpath d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z' fill='%23f8fafc'%3E%3C/path%3E%3C/svg%3E");
+  background-size: cover;
+}
+
+.heroContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.heroContent {
+  color: white;
+}
+
+.heroBadge {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-weight: 400;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  color: white;
+}
+
+.titleAccent {
+  font-weight: 400;
+  background: linear-gradient(45deg, #fbbf24, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.heroDescription {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  margin-bottom: 2.5rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.heroStats {
+  display: flex;
+  gap: 2rem;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statNumber {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #fbbf24;
+  margin-bottom: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  font-weight: 400;
+  margin-bottom: 2.5rem;
+}
+
+/* Hero Visual */
+.heroVisual {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+}
+
+.visualCard {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+  font-weight: 400;
+}
+
+.visualCard:nth-child(1) {
+  top: 20px;
+  left: 0;
+  transform: rotate(-5deg);
+  animation: float 3s ease-in-out infinite;
+}
+
+.visualCard:nth-child(2) {
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%) rotate(3deg);
+  animation: float 3s ease-in-out infinite 1s;
+}
+
+.visualCard:nth-child(3) {
+  bottom: 30px;
+  left: 40%;
+  transform: rotate(2deg);
+  animation: float 3s ease-in-out infinite 0.5s;
+}
+
+.visualCard:hover {
+  transform: scale(1.05) rotate(0deg);
+}
+
+.cardIcon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.cardText {
+  font-size: 0.9rem;
+  color: #6366f1;
+  font-weight: 400;
+}
+
+.visualPulse {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Contact Grid */
+.contactGrid {
+  padding: 4rem 0;
+}
+
+.gridHeader {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.gridTitle {
+  font-size: 2.5rem;
+  font-weight: 400;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.gridSubtitle {
+  font-size: 1.1rem;
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto;
+  font-weight: 400;
+}
+
+.methodsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.methodCard {
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.methodCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.methodIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.methodInfo {
+  flex: 1;
+}
+
+.methodName {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.methodDescription {
+  color: #64748b;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.methodFeatures {
+  margin-bottom: 2rem;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  color: #475569;
+  font-weight: 400;
+}
+
+.featureIcon {
+  color: #10b981;
+  font-weight: 400;
+}
+
+/* Social Links */
+.socialLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.socialLink {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #475569;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.socialLink:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  transform: translateX(5px);
+}
+
+.socialIcon {
+  font-size: 1.1rem;
+}
+
+/* Action Button */
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: var(--accent-color, #6366f1);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  font-weight: 400;
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.actionArrow {
+  transition: transform 0.3s ease;
+}
+
+.actionButton:hover .actionArrow {
+  transform: translateX(3px);
+}
+
+.cardGlow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent-color, #6366f1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.methodCard:hover .cardGlow {
+  opacity: 1;
+}
+
+/* Contact Form Section */
+.contactFormSection {
+  padding: 4rem 0;
+}
+
+.formContainer {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 3rem;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f5f9;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.formIcon {
+  font-size: 3rem;
+  background: #f0f9ff;
+  padding: 1rem;
+  border-radius: 16px;
+}
+
+.formTitle {
+  font-size: 2rem;
+  font-weight: 400;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.formSubtitle {
+  color: #64748b;
+  font-weight: 400;
+}
+
+/* Form Styles */
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.inputLabel {
+  font-weight: 400;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.textInput,
+.selectInput,
+.textareaInput {
+  padding: 1rem 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  font-family: inherit;
+  font-weight: 400;
+}
+
+.textInput:focus,
+.selectInput:focus,
+.textareaInput:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.textareaInput {
+  resize: vertical;
+  min-height: 140px;
+  line-height: 1.5;
+}
+
+.charCounter {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-top: 0.5rem;
+  font-weight: 400;
+}
+
+/* Urgency Grid */
+.urgencyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.urgencyOption {
+  cursor: pointer;
+}
+
+.radioInput {
+  display: none;
+}
+
+.urgencyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-weight: 400;
+}
+
+.radioInput:checked + .urgencyCard {
+  border-color: #6366f1;
+  background: #f0f9ff;
+  color: #6366f1;
+}
+
+.urgencyCard:hover {
+  border-color: #6366f1;
+}
+
+.urgencyIcon {
+  font-size: 1.5rem;
+}
+
+.urgencyLabel {
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+/* Submit Button */
+.submitButton {
+  position: relative;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border: none;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  font-weight: 400;
+  margin-top: 1rem;
+}
+
+.submitButton:hover:not(.submitting) {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(99, 102, 241, 0.4);
+}
+
+.submitButton:active:not(.submitting) {
+  transform: translateY(0);
+}
+
+.buttonContent {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+.buttonText {
+  font-weight: 400;
+}
+
+.buttonIcon {
+  transition: transform 0.3s ease;
+}
+
+.submitButton:hover .buttonIcon:not(.submitting) {
+  transform: translateX(3px);
+}
+
+.buttonLoader {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.6);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.submitButton.submitting .buttonLoader {
+  width: 100%;
+  animation: loading 2s ease-in-out;
+}
+
+.submitButton.submitting {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--rotation, 0deg));
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes loading {
+  0% {
+    width: 0%;
+  }
+  50% {
+    width: 100%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .heroContainer {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    text-align: center;
+  }
+  
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+  
+  .heroStats {
+    justify-content: center;
+  }
+  
+  .methodsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .urgencyGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .pageContent {
+    padding: 0 1rem 3rem;
+  }
+  
+  .contactHero {
+    padding: 3rem 1rem 4rem;
+  }
+  
+  .heroTitle {
+    font-size: 2rem;
+  }
+  
+  .heroStats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .formContainer {
+    padding: 2rem 1.5rem;
+  }
+  
+  .formHeader {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .urgencyGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .visualCard {
+    position: relative;
+    margin: 0.5rem;
+    transform: none !important;
+    animation: none;
+  }
+  
+  .heroVisual {
+    flex-direction: column;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .gridTitle {
+    font-size: 2rem;
+  }
+  
+  .methodCard {
+    padding: 1.5rem;
+  }
+  
+  .formContainer {
+    padding: 1.5rem;
+  }
+  
+  .formTitle {
+    font-size: 1.5rem;
+  }
+}

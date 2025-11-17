@@ -1,0 +1,156 @@
+.aiContainer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2000;
+}
+
+.aiButton {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: green;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+  font-size: 24px;
+}
+
+.aiButton:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+.aiButton:active {
+  transform: scale(0.95);
+}
+
+.chatContainer {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  width: 350px;
+  height: 500px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media(max-width: 700px) {
+  .chatContainer {
+    width: 90vw;
+    height: 60vh;
+    right: 0vw;
+    bottom: 80px;
+  }
+}
+
+.chatHeader {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 20px;
+}
+
+.chatMessages {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  background: #f8f9fa;
+}
+
+.message {
+  margin-bottom: 10px;
+  padding: 10px 15px;
+  border-radius: 18px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.userMessage {
+  background: #667eea;
+  color: white;
+  margin-left: auto;
+  border-bottom-right-radius: 5px;
+}
+
+.aiMessage {
+  background: white;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  border-bottom-left-radius: 5px;
+}
+
+.chatInput {
+  display: flex;
+  padding: 15px;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+}
+
+.chatInput input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  outline: none;
+  margin-right: 10px;
+}
+
+.chatInput input:focus {
+  border-color: #667eea;
+}
+
+.chatInput button {
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chatInput button:hover {
+  background: #5a6fd8;
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* Animation for chat appearance */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chatContainer {
+  animation: slideUp 0.3s ease-out;
+}

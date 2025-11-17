@@ -1,0 +1,492 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.header {
+  background: #00357b;
+  color: white;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.headerContent {
+  max-width: 90%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 400;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #fff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin: 0 0 2rem 0;
+}
+
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.statNumber {
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+}
+
+.pulse {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Loading States */
+.loadingContainer {
+  padding: 2rem 0;
+}
+
+.loadingCards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.skeletonCard {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  animation: pulse 2s infinite;
+}
+
+.skeletonHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.skeletonAvatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: #e2e8f0;
+}
+
+.skeletonText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeletonLine {
+  height: 1rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
+  width: 60%;
+}
+
+.skeletonLineShort {
+  height: 0.75rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
+  width: 30%;
+}
+
+.skeletonContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeletonParagraph {
+  height: 0.875rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
+  width: 100%;
+}
+
+.skeletonParagraphShort {
+  height: 0.875rem;
+  background: #e2e8f0;
+  border-radius: 0.5rem;
+  width: 70%;
+}
+
+/* Error State */
+.errorContainer {
+  padding: 3rem 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.errorCard {
+  background: white;
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 100%;
+}
+
+.errorIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.errorText h3 {
+  margin: 0 0 0.5rem 0;
+  color: #1f2937;
+  font-size: 1.5rem;
+}
+
+.errorText p {
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.retryButton {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.retryButton:hover {
+  transform: translateY(-2px);
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.emptyIllustration {
+  margin-bottom: 1.5rem;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  opacity: 0.7;
+}
+
+.emptyState h2 {
+  font-size: 1.75rem;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.emptyState p {
+  color: #6b7280;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+/* Reviews Grid */
+.reviewsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.reviewCard {
+  background: white;
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  animation: slideInUp 0.6s ease both;
+  position: relative;
+  overflow: hidden;
+}
+
+.reviewCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.reviewCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.avatar {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.username {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.timestamp {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.ratingIndicator {
+  flex-shrink: 0;
+}
+
+.ratingStars {
+  color: #fbbf24;
+  font-size: 1.125rem;
+  letter-spacing: 2px;
+}
+
+.cardContent {
+  margin-bottom: 1.5rem;
+}
+
+.reviewText {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: #4b5563;
+  margin: 0;
+  font-weight: 400;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.reviewMeta {
+  font-size: 0.875rem;
+  font-weight: 4300;
+  color: #00357b;
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.actionButton {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.actionButton:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header {
+    padding: 3rem 1.5rem 2rem;
+  }
+  
+  .title {
+    font-size: 2.5rem;
+  }
+  
+  .subtitle {
+    font-size: 1.125rem;
+  }
+  
+  .content {
+    padding: 1rem;
+  }
+  
+  .stats {
+    gap: 1.5rem;
+  }
+  
+  .statNumber {
+    font-size: 2rem;
+  }
+  
+  .reviewCard {
+    padding: 1.5rem;
+    border-radius: 1rem;
+  }
+  
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .ratingIndicator {
+    align-self: flex-start;
+  }
+  
+  .cardFooter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .actionButton {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 2rem 1rem 1.5rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .reviewCard {
+    padding: 1.25rem;
+  }
+  
+  .avatar {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+  }
+  
+  .reviewText {
+    font-size: 1rem;
+  }
+}
+
+/* iPad Specific */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header {
+    padding: 3rem 2rem 2rem;
+  }
+  
+  .content {
+    padding: 1.5rem;
+  }
+  
+  .reviewCard {
+    padding: 1.75rem;
+  }
+}

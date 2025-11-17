@@ -1,0 +1,349 @@
+.verificationContainer {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  padding: 8px 0;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backButton:hover {
+  color: #00357b;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.iconContainer {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.iconContainer i {
+  font-size: 2.5rem;
+  color: white;
+}
+
+.title {
+  color: #00357b;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #00357b, #667eea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.description {
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.description strong {
+  color: #00357b;
+  font-weight: 600;
+}
+
+.codeInputContainer {
+  margin-bottom: 30px;
+}
+
+.codeInputs {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.codeInput {
+  width: 55px;
+  height: 65px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: white;
+  color: #00357b;
+}
+
+.codeInput:focus {
+  outline: none;
+  border-color: #00357b;
+  box-shadow: 0 0 0 3px rgba(0, 53, 123, 0.1);
+  transform: scale(1.05);
+}
+
+.codeInput.filled {
+  border-color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.codeDigits {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 5px;
+}
+
+.digitLabel {
+  width: 55px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.verifyButton {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.verifyButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+}
+
+.verifyButton:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.verifyButton.loading {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.clearButton {
+  background: none;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clearButton:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.resendContainer {
+  text-align: right;
+  flex: 1;
+}
+
+.resendText {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.countdown {
+  color: #ef4444;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resendButton {
+  background: none;
+  border: none;
+  color: #00357b;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+}
+
+.resendButton:hover {
+  color: #002a5f;
+}
+
+.tips {
+  padding: 20px;
+  background: #f8faff;
+  border-radius: 12px;
+  border-left: 4px solid #10b981;
+}
+
+.tipsTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tipsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tipsList li {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.tipsList li i {
+  color: #10b981;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .verificationContainer {
+    max-width: 100%;
+  }
+  
+  .codeInput {
+    width: 45px;
+    height: 55px;
+    font-size: 1.5rem;
+  }
+  
+  .digitLabel {
+    width: 45px;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .verifyButton {
+    padding: 16px;
+    font-size: 1rem;
+  }
+  
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .resendContainer {
+    text-align: center;
+  }
+  
+  .resendText {
+    justify-content: center;
+  }
+}
+
+/* add inside VerificationCode.module.css */
+.centerSpinner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 8px solid rgba(0,0,0,0.05);
+  border-top-color: #111827;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

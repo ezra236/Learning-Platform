@@ -1,0 +1,290 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+.titleSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.titleSection h2 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 1.8rem;
+  font-weight: 400;
+}
+
+.countBadge {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 25px;
+  font-weight: 400;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subtitle {
+  margin: 0;
+  color: #718096;
+  font-size: 1rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.statCard {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.statIcon {
+  font-size: 2rem;
+}
+
+.statInfo {
+  flex: 1;
+}
+
+.statNumber {
+  font-size: 1.8rem;
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+
+.statLabel {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.subscribersContainer {
+  flex: 1;
+  background: #f8f9fa;
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.subscribersHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 15px 15px 15px;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 400;
+  color: #4a5568;
+}
+
+.subscribersList {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.subscriberItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  background: white;
+  border-radius: 12px;
+  border-left: 4px solid #4facfe;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.subscriberItem:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.subscriberInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.emailIcon {
+  font-size: 1.5rem;
+}
+
+.emailInfo {
+  flex: 1;
+}
+
+.email {
+  font-weight: 400;
+  color: #2d3748;
+  margin-bottom: 4px;
+}
+
+.subscriberId {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.dateInfo {
+  text-align: right;
+}
+
+.date {
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+.status {
+  font-size: 0.8rem;
+  color: #38a169;
+  font-weight: 500;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.emptyIcon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.5;
+}
+
+.emptyState h3 {
+  margin: 0 0 10px 0;
+  color: #4a5568;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.spinner {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left: 4px solid #f56565;
+}
+
+.errorIcon {
+  font-size: 1.2rem;
+}
+
+.refreshButton {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+  border: none;
+  padding: 14px 25px;
+  border-radius: 50px;
+  font-weight: 400;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+}
+
+.refreshButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+}
+
+.refreshButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Tablet Styles */
+@media (max-width: 1024px) {
+  .subscriberItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .dateInfo {
+    text-align: left;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .titleSection {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+  
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .subscribersHeader {
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+  }
+  
+  .subscriberInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .emailIcon {
+    align-self: flex-start;
+  }
+}

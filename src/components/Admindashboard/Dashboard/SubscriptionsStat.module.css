@@ -1,0 +1,337 @@
+.container {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  border-radius: 24px;
+  padding: 32px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 12px 32px rgba(245, 87, 108, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+  animation: scaleIn 0.7s ease-out;
+}
+
+.container:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 
+    0 20px 50px rgba(245, 87, 108, 0.35),
+    0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.backgroundEffect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.container:hover .backgroundEffect {
+  opacity: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.iconContainer {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.container:hover .iconContainer {
+  transform: scale(1.1) rotate(5deg);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.icon {
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+}
+
+.headerText {
+  flex: 1;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  opacity: 0.95;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  margin: 0;
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.stats {
+  margin-bottom: 28px;
+}
+
+.mainValue {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #ffffff, #ffeaa7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.valueLabel {
+  font-size: 0.95rem;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.progressSection {
+  margin-bottom: 24px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.progressLabel {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  font-weight: 600;
+}
+
+.progressValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.progressBar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffeaa7, #fab1a0);
+  border-radius: 4px;
+  transition: width 1.5s ease-in-out;
+  box-shadow: 0 2px 8px rgba(254, 202, 202, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.progressTrend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.trendIcon {
+  font-size: 1rem;
+}
+
+.trendText {
+  font-weight: 500;
+}
+
+.revenueSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.revenueItem {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.container:hover .revenueItem {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.revenueLabel {
+  display: block;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.revenueValue {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  opacity: 0.95;
+}
+
+.footer {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.container:hover .cta {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ctaArrow {
+  transition: transform 0.3s ease;
+}
+
+.container:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    padding: 28px;
+    border-radius: 20px;
+  }
+  
+  .mainValue {
+    font-size: 2.5rem;
+  }
+  
+  .iconContainer {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .icon {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  
+  .header {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  
+  .iconContainer {
+    align-self: center;
+  }
+  
+  .mainValue {
+    font-size: 2.25rem;
+  }
+  
+  .revenueSection {
+    gap: 12px;
+  }
+  
+  .revenueItem {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+  
+  .mainValue {
+    font-size: 2rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+}

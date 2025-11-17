@@ -1,0 +1,449 @@
+.container {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: slideInUp 0.8s ease-out;
+}
+
+.container:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.titleIcon {
+  font-size: 1.75rem;
+  animation: wrench 2s ease-in-out infinite;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* Common link card styles */
+.linkCard {
+  display: block;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid;
+  animation: cardAppear 0.6s ease-out;
+}
+
+/* Individual card animations */
+.editExam { animation-delay: 0.15s; }
+.updateVersion { animation-delay: 0.25s; }
+.manageQuestions { animation-delay: 0.35s; }
+.editMetadata { animation-delay: 0.45s; }
+.reviewContent { animation-delay: 0.55s; }
+.previewExam { animation-delay: 0.65s; }
+
+/* Edit Exam Card - Solid Purple */
+.editExam {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  border-color: #7C3AED;
+  color: white;
+}
+
+.editExam .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.editExam .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.editExam .arrow {
+  color: white;
+}
+
+.editExam:hover {
+  border-color: #8B5CF6;
+  box-shadow: 
+    0 12px 24px rgba(139, 92, 246, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.editExam .hoverEffect {
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
+}
+
+/* Update Version Card - Solid Blue */
+.updateVersion {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  border-color: #2563EB;
+  color: white;
+}
+
+.updateVersion .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.updateVersion .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.updateVersion .arrow {
+  color: white;
+}
+
+.updateVersion:hover {
+  border-color: #3B82F6;
+  box-shadow: 
+    0 12px 24px rgba(59, 130, 246, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.updateVersion .hoverEffect {
+  background: linear-gradient(135deg, #2563EB, #1D4ED8);
+}
+
+/* Manage Questions Card - Solid Emerald */
+.manageQuestions {
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-color: #059669;
+  color: white;
+}
+
+.manageQuestions .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.manageQuestions .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.manageQuestions .arrow {
+  color: white;
+}
+
+.manageQuestions:hover {
+  border-color: #10B981;
+  box-shadow: 
+    0 12px 24px rgba(16, 185, 129, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.manageQuestions .hoverEffect {
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+/* Edit Metadata Card - Solid Rose */
+.editMetadata {
+  background: linear-gradient(135deg, #F43F5E, #E11D48);
+  border-color: #E11D48;
+  color: white;
+}
+
+.editMetadata .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.editMetadata .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.editMetadata .arrow {
+  color: white;
+}
+
+.editMetadata:hover {
+  border-color: #F43F5E;
+  box-shadow: 
+    0 12px 24px rgba(244, 63, 94, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.editMetadata .hoverEffect {
+  background: linear-gradient(135deg, #E11D48, #BE123C);
+}
+
+/* Review Content Card - Solid Cyan */
+.reviewContent {
+  background: linear-gradient(135deg, #06B6D4, #0891B2);
+  border-color: #0891B2;
+  color: white;
+}
+
+.reviewContent .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.reviewContent .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.reviewContent .arrow {
+  color: white;
+}
+
+.reviewContent:hover {
+  border-color: #06B6D4;
+  box-shadow: 
+    0 12px 24px rgba(6, 182, 212, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.reviewContent .hoverEffect {
+  background: linear-gradient(135deg, #0891B2, #0E7490);
+}
+
+/* Preview Exam Card - Solid Pink */
+.previewExam {
+  background: linear-gradient(135deg, #EC4899, #DB2777);
+  border-color: #DB2777;
+  color: white;
+}
+
+.previewExam .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.previewExam .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.previewExam .arrow {
+  color: white;
+}
+
+.previewExam:hover {
+  border-color: #EC4899;
+  box-shadow: 
+    0 12px 24px rgba(236, 72, 153, 0.3),
+    0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.previewExam .hoverEffect {
+  background: linear-gradient(135deg, #DB2777, #BE185D);
+}
+
+/* Common card content styles */
+.cardContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.linkCard:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.linkCard:hover .cardContent {
+  color: white;
+}
+
+.linkIcon {
+  font-size: 1.5rem;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.linkCard:hover .linkIcon {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  color: white;
+}
+
+.linkContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.linkDesc {
+  font-size: 0.8rem;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.arrow {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.linkCard:hover .arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: white;
+}
+
+.hoverEffect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.linkCard:hover .hoverEffect {
+  opacity: 1;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes wrench {
+  0%, 20%, 50%, 80%, 100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-15deg);
+  }
+  60% {
+    transform: rotate(10deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    padding: 28px;
+    border-radius: 20px;
+  }
+  
+  .grid {
+    gap: 14px;
+  }
+  
+  .cardContent {
+    padding: 18px;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .title {
+    font-size: 1.35rem;
+  }
+  
+  .cardContent {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .linkIcon {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+  
+  .header {
+    margin-bottom: 24px;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+  }
+}

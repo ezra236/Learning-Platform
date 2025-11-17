@@ -1,0 +1,100 @@
+/* components/TodayPayments.module.css */
+.header {
+  margin-bottom: 20px;
+}
+
+.titleContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.iconContainer {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #00357b, #0056b3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon {
+  font-size: 18px;
+  color: white;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 400;
+  color: #00357b;
+  margin: 0;
+}
+
+.paymentStats {
+  margin-bottom: 16px;
+}
+
+.paymentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.paymentItem:last-child {
+  border-bottom: none;
+}
+
+.paymentInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.paymentIcon {
+  font-size: 14px;
+  color: #00357b;
+}
+
+.paymentLabel {
+  color: #666;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.paymentValue {
+  color: #00357b;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.trend {
+  font-size: 12px;
+  text-align: center;
+}
+
+.trendPositive {
+  color: #28a745;
+  font-weight: 400;
+}
+
+.trendText {
+  color: #888;
+  font-weight: 400;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .paymentItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .paymentValue {
+    align-self: flex-end;
+  }
+}

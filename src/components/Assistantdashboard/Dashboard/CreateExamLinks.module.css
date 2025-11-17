@@ -1,0 +1,466 @@
+.container {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  animation: slideInUp 0.7s ease-out;
+}
+
+.container:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.12),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #1f2937;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.titleIcon {
+  font-size: 1.75rem;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* Common link card styles */
+.linkCard {
+  display: block;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid;
+  animation: cardAppear 0.6s ease-out;
+}
+
+/* Individual card animations */
+.quickExam { animation-delay: 0.1s; }
+.template { animation-delay: 0.2s; }
+.advanced { animation-delay: 0.3s; }
+.timedExam { animation-delay: 0.4s; }
+.practiceTest { animation-delay: 0.5s; }
+.gradedExam { animation-delay: 0.6s; }
+
+/* Quick Exam Card Styles */
+.quickExam {
+  background: linear-gradient(135deg, #667eea, #5a6fd8);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.quickExam .linkTitle {
+  color: white;
+}
+
+.quickExam .linkDesc {
+  color: white;
+}
+
+.quickExam .linkIcon {
+  background: white;
+  color: #667eea;
+}
+
+.quickExam .arrow {
+  color: #667eea;
+}
+
+.quickExam:hover {
+  border-color: #667eea;
+  box-shadow: 
+    0 12px 24px rgba(102, 126, 234, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.quickExam .hoverEffect {
+  background: linear-gradient(135deg, #4b63ce, #5a6fd8);
+}
+
+/* Template Card Styles */
+.template {
+  background: linear-gradient(135deg, #764ba2, #6a4190);
+  border-color: rgba(118, 75, 162, 0.3);
+}
+
+.template .linkTitle {
+  color: white;
+}
+
+.template .linkDesc {
+  color: white;
+}
+
+.template .linkIcon {
+  background: white;
+  color: #764ba2;
+}
+
+.template .arrow {
+  color: #764ba2;
+}
+
+.template:hover {
+  border-color: #764ba2;
+  box-shadow: 
+    0 12px 24px rgba(118, 75, 162, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.template .hoverEffect {
+  background: linear-gradient(135deg, #62398c, #6a4190);
+}
+
+/* Advanced Card Styles */
+.advanced {
+  background: linear-gradient(135deg, #8c4094, #b63ac7);
+  border-color: rgba(240, 147, 251, 0.3);
+}
+
+.advanced .linkTitle {
+  color: white;
+}
+
+.advanced .linkDesc {
+  color: white;
+}
+
+.advanced .linkIcon {
+  background: white;
+  color: #f093fb;
+}
+
+.advanced .arrow {
+  color: #f093fb;
+}
+
+.advanced:hover {
+  border-color: #f093fb;
+  box-shadow: 
+    0 12px 24px rgba(240, 147, 251, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.advanced .hoverEffect {
+  background: linear-gradient(135deg, #894091, #e885f5);
+}
+
+/* Timed Exam Card Styles */
+.timedExam {
+  background: linear-gradient(135deg, #4facfe, #3fa0fe);
+  border-color: rgba(79, 172, 254, 0.3);
+}
+
+.timedExam .linkTitle {
+  color: white;
+}
+
+.timedExam .linkDesc {
+  color: white;
+}
+
+.timedExam .linkIcon {
+  background: white;
+  color: #4facfe;
+}
+
+.timedExam .arrow {
+  color: #4facfe;
+}
+
+.timedExam:hover {
+  border-color: #4facfe;
+  box-shadow: 
+    0 12px 24px rgba(79, 172, 254, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.timedExam .hoverEffect {
+  background: linear-gradient(135deg, #4facfe, #3fa0fe);
+}
+
+/* Practice Test Card Styles */
+.practiceTest {
+  background: linear-gradient(135deg, #c72c41, #de2b43);
+  border-color: rgba(245, 87, 108, 0.3);
+}
+
+.practiceTest .linkTitle {
+  color: white;
+}
+
+.practiceTest .linkDesc {
+  color: white;
+}
+
+.practiceTest .linkIcon {
+  background: white;
+  color: #f5576c;
+}
+
+.practiceTest .arrow {
+  color: #f5576c;
+}
+
+.practiceTest:hover {
+  border-color: #f5576c;
+  box-shadow: 
+    0 12px 24px rgba(245, 87, 108, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.practiceTest .hoverEffect {
+  background: linear-gradient(135deg, #f5576c, #f4455c);
+}
+
+/* Graded Exam Card Styles */
+.gradedExam {
+  background: linear-gradient(135deg, #20a94d, #129b2b);
+  border-color: rgba(67, 233, 123, 0.3);
+}
+
+.gradedExam .linkTitle {
+  color: white;
+}
+
+.gradedExam .linkDesc {
+  color: white;
+}
+
+.gradedExam .linkIcon {
+  background: white;
+  color: #43e97b;
+}
+
+.gradedExam .arrow {
+  color: #43e97b;
+}
+
+.gradedExam:hover {
+  border-color: #43e97b;
+  box-shadow: 
+    0 12px 24px rgba(67, 233, 123, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.gradedExam .hoverEffect {
+  background: linear-gradient(135deg, #38d46c, #26b355);
+}
+
+/* Common card content styles */
+.cardContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.linkCard:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.linkCard:hover .cardContent {
+  color: white;
+}
+
+.linkIcon {
+  font-size: 1.5rem;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.linkCard:hover .linkIcon {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  color: white;
+}
+
+.linkContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linkTitle {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.linkDesc {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0;
+  transition: color 0.3s ease;
+}
+
+.linkCard:hover .linkDesc {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.arrow {
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.linkCard:hover .arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: white;
+}
+
+.hoverEffect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.linkCard:hover .hoverEffect {
+  opacity: 1;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    padding: 28px;
+    border-radius: 20px;
+  }
+  
+  .grid {
+    gap: 14px;
+  }
+  
+  .cardContent {
+    padding: 18px;
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .title {
+    font-size: 1.35rem;
+  }
+  
+  .cardContent {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .linkIcon {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 20px;
+  }
+  
+  .header {
+    margin-bottom: 24px;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .subtitle {
+    font-size: 0.9rem;
+  }
+}

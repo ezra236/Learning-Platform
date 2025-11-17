@@ -1,0 +1,456 @@
+/* GrowthBarChart.module.css */
+.chartContainer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 35px;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  box-shadow: 
+    0 4px 32px rgba(15, 23, 42, 0.08),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+  position: relative;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+}
+
+.chartContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+}
+
+/* Header Styles */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.titleSection {
+  flex: 1;
+}
+
+.chartTitle {
+  font-size: 1.6rem;
+  font-weight: 400;
+  color: goldenrod;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.chartSubtitle {
+  font-size: 0.95rem;
+  color: #01060e;
+  font-weight: 400;
+}
+
+/* Range Select */
+.rangeSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.rangeLabel {
+  font-size: 0.85rem;
+  color: #010c1b;
+  font-weight: 400;
+}
+
+.select {
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0f172a;
+  min-width: 160px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Loading State */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 10;
+  border-radius: 20px;
+}
+
+.loadingSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 400;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Chart Area */
+.chartArea {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.chart {
+  position: relative;
+  height: 400px;
+  background: transparent;
+}
+
+/* Grid Lines */
+.gridLines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.gridLine {
+  position: relative;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.gridLabel {
+  position: absolute;
+  left: -20px;
+  top: -10px;
+  font-size: 0.75rem;
+  color: #0c1623;
+  font-weight: 400;
+}
+
+/* Bars Container */
+.barsContainer {
+  position: absolute;
+  left: 60px;
+  right: 40px;
+  bottom: 0;
+  top: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.barGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 200px;
+  height: 100%;
+}
+
+.barWrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+}
+
+.bar {
+  width: 70%;
+  max-width: 80px;
+  height: var(--bar-height);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: bottom;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.barLoading {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.barFill {
+  width: 100%;
+  height: 100%;
+  background: var(--bar-gradient);
+  border-radius: 12px 12px 8px 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.12),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.barFill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 100%);
+  border-radius: 12px 12px 0 0;
+}
+
+.barValue {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.barGlow {
+  position: absolute;
+  top: 0;
+  left: -10%;
+  right: -10%;
+  height: 20px;
+  background: var(--bar-glow);
+  filter: blur(12px);
+  opacity: 0.3;
+  border-radius: 50%;
+  z-index: -1;
+  transition: all 0.3s ease;
+}
+
+/* Hover Effects */
+.bar:hover {
+  transform: scale(1.05) translateY(-8px);
+}
+
+.bar:hover .barValue {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bar:hover .barGlow {
+  opacity: 0.5;
+}
+
+/* Bar Label */
+.barLabel {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.barLabel span {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #475569;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Summary Grid */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.summaryCard {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.summaryCard:hover {
+  transform: translateY(-4px);
+  background: rgba(57, 5, 134, 0.717);
+}
+
+.summaryIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.summaryContent {
+  flex: 1;
+}
+
+.summaryLabel {
+  font-size: 0.85rem;
+  color: #021125;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+
+.summaryValue {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: #0f172a;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.summaryTrend {
+  font-size: 0.90rem;
+  color: #10b981;
+  font-weight: 400;
+}
+
+.summaryCard:hover .summaryTrend {
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .chartContainer {
+    padding: 20px;
+  }
+  
+  .chart {
+    height: 350px;
+  }
+  
+  .barsContainer {
+    left: 50px;
+    right: 30px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .rangeSelect {
+    align-items: flex-start;
+  }
+  
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart {
+    height: 300px;
+  }
+  
+  .barsContainer {
+    left: 40px;
+    right: 20px;
+    gap: 8px;
+  }
+  
+  .barValue {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chartContainer {
+    padding: 16px;
+    border-radius: 16px;
+  }
+  
+  .chartTitle {
+    font-size: 1.5rem;
+  }
+  
+  .chart {
+    height: 250px;
+  }
+  
+  .barsContainer {
+    left: 30px;
+    right: 15px;
+  }
+  
+  .barLabel span {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  
+  .summaryCard {
+    padding: 16px;
+  }
+  
+  .summaryValue {
+    font-size: 1.25rem;
+  }
+}

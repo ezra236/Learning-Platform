@@ -1,0 +1,112 @@
+// components/TodaySignedIn.js
+import React, { useEffect, useState, useRef } from "react";
+import { FaSignInAlt } from "react-icons/fa";
+import StatCard from "./StatCard";
+import styles from "./TodaySignedIn.module.css";
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+const ENDPOINT = `${API_BASE}/api/today-signed-in/`;
+const CSRF_ENDPOINT = `${API_BASE}/api/csrf/`; // your csrf path
+
+const fetchCsrfToken = async () => {
+  try {
+    const res = await fetch(CSRF_ENDPOINT, {
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    // adapt depending on what your csrf view returns; common keys: csrfToken, csrf, token
+    return data.csrfToken || data.csrf || data.token || null;
+  } catch (err) {
+    console.error("Failed to fetch CSRF token", err);
+    return null;
+  }
+};
+
+const TodaySignedIn = () => {
+  const [todaySignedIn, setTodaySignedIn] = useState(0);
+  const [percentChange, setPercentChange] = useState(null);
+  const [trend, setTrend] = useState("none");
+  const csrfRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  const fetchData = async () => {
+    try {
+      // ensure we have a csrf token (optional for GET but requested by you)
+      if (!csrfRef.current) {
+        csrfRef.current = await fetchCsrfToken();
+      }
+
+      const res = await fetch(ENDPOINT, {
+        method: "GET",
+        credentials: "include", // important -> send session cookie
+        headers: {
+          Accept: "application/json",
+          "X-CSRFToken": csrfRef.current || "",
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        // user not authenticated - silently bail or handle as you prefer
+        console.warn("Not authenticated for today-signed-in API");
+        return;
+      }
+
+      if (!res.ok) {
+        console.error("Error fetching today-signed-in:", res.status);
+        return;
+      }
+
+      const json = await res.json();
+      setTodaySignedIn(json.count ?? 0);
+      setPercentChange(
+        json.percent_change === null || json.percent_change === undefined
+          ? null
+          : Number(json.percent_change)
+      );
+      setTrend(json.trend || "none");
+    } catch (err) {
+      console.error("Failed to fetch today-signed-in API", err);
+    }
+  };
+
+  useEffect(() => {
+    // first fetch immediately
+    fetchData();
+    // then poll every 30 seconds
+    intervalRef.current = setInterval(fetchData, 30_000);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+    // no dependencies: we want a single interval per mount
+  }, []);
+
+  const trendClass =
+    trend === "up" ? styles.trendPositive : trend === "down" ? styles.trendNegative : styles.trendNeutral;
+  const percentText = percentChange === null ? "—" : `${percentChange}%`;
+
+  return (
+    <StatCard>
+      <div className={styles.container}>
+        <div className={styles.iconContainer}>
+          <FaSignInAlt className={styles.icon} />
+        </div>
+        <div className={styles.content}>
+          <h3 className={styles.label}>Signed In Today</h3>
+          <div className={styles.value}>{todaySignedIn.toLocaleString()}</div>
+          <div className={styles.trend}>
+            <span className={trendClass}>
+              {trend === "up" ? "+" : trend === "down" ? "" : ""}
+              {percentText}
+            </span>
+            <span className={styles.trendText}> from yesterday</span>
+          </div>
+        </div>
+      </div>
+    </StatCard>
+  );
+};
+
+export default TodaySignedIn;

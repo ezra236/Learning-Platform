@@ -1,0 +1,285 @@
+.features {
+  padding: 120px 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+}
+
+.features::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 30% 30%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(255, 119, 198, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 6rem;
+}
+
+.sectionTitle {
+  font-size: 3rem;
+  font-weight: 400;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+.sectionSubtitle {
+  font-size: 1.3rem;
+  font-weight: 400;
+  opacity: 0.9;
+  max-width: 700px;
+  margin: 2rem auto 0;
+  line-height: 1.6;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2.5rem;
+  margin-bottom: 6rem;
+}
+
+.featureCard {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  padding: 3rem 2.5rem;
+  border-radius: 20px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  animation: slideInUp 0.6s ease-out forwards;
+}
+
+.featureCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s;
+}
+
+.featureCard:hover::before {
+  left: 100%;
+}
+
+.featureCard:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.featureIconContainer {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.featureIcon {
+  font-size: 4rem;
+  display: block;
+  transition: all 0.4s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.featureCard:hover .featureIcon {
+  transform: scale(1.2) rotate(5deg);
+}
+
+.iconBackground {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.4s ease;
+}
+
+.featureCard:hover .iconBackground {
+  transform: translate(-50%, -50%) scale(1.5);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.featureTitle {
+  font-size: 1.4rem;
+  font-weight: 400;
+  margin-bottom: 1.2rem;
+  position: relative;
+}
+
+.featureTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: width 0.3s ease;
+}
+
+.featureCard:hover .featureTitle::after {
+  width: 80px;
+}
+
+.featureDescription {
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0.9;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.ctaSection {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 4rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeIn 1s ease-out 0.8s both;
+}
+
+.ctaTitle {
+  font-size: 2.2rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+}
+
+.ctaText {
+  font-size: 1.2rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-bottom: 2.5rem;
+}
+
+.ctaButton {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 16px 40px;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.ctaButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 968px) {
+  .featuresGrid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .features {
+    padding: 80px 0;
+  }
+  
+  .sectionTitle {
+    font-size: 2.3rem;
+  }
+  
+  .sectionSubtitle {
+    font-size: 1.1rem;
+  }
+  
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+  
+  .featureCard {
+    padding: 2.5rem 2rem;
+  }
+  
+  .ctaSection {
+    padding: 3rem 2rem;
+  }
+  
+  .ctaTitle {
+    font-size: 1.8rem;
+  }
+}
+
+
+.ctaButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: linear-gradient(90deg, #4caf50, #81c784);
+  transition: 0.3s ease;
+}

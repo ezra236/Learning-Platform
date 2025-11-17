@@ -1,0 +1,28 @@
+.whatsappButton {
+  position: fixed;
+  bottom: 100px; /* Above the AI button */
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #25D366; /* WhatsApp green */
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: white;
+  text-decoration: none;
+  z-index: 1001; /* Above the AI chat window */
+}
+
+.whatsappButton:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+.whatsappButton:active {
+  transform: scale(0.95);
+}

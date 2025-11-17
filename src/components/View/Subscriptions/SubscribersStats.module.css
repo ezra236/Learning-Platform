@@ -1,0 +1,204 @@
+/* SubscribersStats.module.css */
+.container {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.statCard {
+  position: relative;
+  background: white;
+  padding: 0;
+  border-radius: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  min-width: 200px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+  flex: 1;
+}
+
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.statCard.active::before {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  opacity: 1;
+}
+
+.statCard.expired::before {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  opacity: 1;
+}
+
+.statCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+.statCard:hover::before {
+  opacity: 1;
+}
+
+.cardBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.statCard:hover .cardBackground {
+  opacity: 1;
+}
+
+.cardContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  z-index: 2;
+}
+
+.iconWrapper {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.statCard.active .iconWrapper {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.statCard.expired .iconWrapper {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+}
+
+.statCard:hover .iconWrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.icon {
+  font-size: 2rem;
+  filter: brightness(0) invert(1);
+}
+
+.textContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a202c;
+  line-height: 1;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.statCard.active .value {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.statCard.expired .value {
+  background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.label {
+  font-size: 1rem;
+  color: #718096;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.trend {
+  font-size: 0.875rem;
+  color: #a0aec0;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .container {
+    gap: 20px;
+  }
+  
+  .cardContent {
+    padding: 20px;
+    gap: 16px;
+  }
+  
+  .iconWrapper {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .value {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .statCard {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardContent {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .iconWrapper {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .icon {
+    font-size: 1.5rem;
+  }
+  
+  .value {
+    font-size: 1.75rem;
+  }
+  
+  .label {
+    font-size: 0.9rem;
+  }
+}

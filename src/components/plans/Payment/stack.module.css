@@ -1,0 +1,18 @@
+/* stack.module.css */
+.container {
+  width: 100%;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}

@@ -1,0 +1,217 @@
+/* components/insights/ErrorState.module.css */
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.errorContent {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(254, 202, 202, 0.3);
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.errorIcon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.errorText {
+  margin-bottom: 32px;
+}
+
+.errorTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #dc2626;
+  margin: 0 0 12px;
+}
+
+.errorMessage {
+  color: #7f1d1d;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  background: #fef2f2;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border-left: 4px solid #dc2626;
+}
+
+.errorActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.retryButton {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.retryButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4);
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+}
+
+.retryButton:active {
+  transform: translateY(0);
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.9);
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.secondaryButton:hover {
+  background: white;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.retryIcon, .refreshIcon {
+  font-size: 1.1rem;
+}
+
+.errorTips {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.tip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  color: #475569;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.tipIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 32px 16px;
+  }
+  
+  .errorContent {
+    padding: 40px 32px;
+    border-radius: 20px;
+  }
+  
+  .errorIcon {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+  }
+  
+  .errorTitle {
+    font-size: 1.6rem;
+  }
+  
+  .errorActions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .retryButton,
+  .secondaryButton {
+    width: 200px;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 24px 12px;
+  }
+  
+  .errorContent {
+    padding: 32px 24px;
+    border-radius: 16px;
+  }
+  
+  .errorIcon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+  }
+  
+  .errorTitle {
+    font-size: 1.4rem;
+  }
+  
+  .errorMessage {
+    font-size: 0.9rem;
+  }
+  
+  .tip {
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+}

@@ -1,0 +1,92 @@
+/* components/Error.module.css */
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(245, 101, 101, 0.3);
+  border: 1px solid #fed7d7;
+  padding: 0;
+  max-width: 400px;
+  z-index: 1000;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.notificationContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+}
+
+.icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.text {
+  flex: 1;
+}
+
+.title {
+  font-weight: 600;
+  color: #742a2a;
+  margin-bottom: 2px;
+  font-size: 0.9rem;
+}
+
+.message {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: #feb2b2;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.close:hover {
+  color: #fc8181;
+  background: #fff5f5;
+}
+
+.progressBar {
+  height: 3px;
+  background: linear-gradient(90deg, #e53e3e, #fc8181);
+  animation: progress 5s linear forwards;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes progress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@media (max-width: 768px) {
+  .notification {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}

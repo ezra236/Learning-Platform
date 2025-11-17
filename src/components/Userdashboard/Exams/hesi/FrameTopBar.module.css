@@ -1,0 +1,199 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  padding: 16px 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  margin-bottom: 16px;
+}
+
+.left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+}
+
+.examInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.examName {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #2d3748;
+  margin: 0;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mode {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #718096;
+  background: rgba(102, 126, 234, 0.1);
+  padding: 4px 8px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 2;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.progressText {
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: #4a5568;
+  white-space: nowrap;
+}
+
+.progressBar {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.answered {
+  font-size: 0.875rem;
+  color: #667eea;
+  font-weight: 400;
+}
+
+.right {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 400;
+  font-size: 1.125rem;
+  transition: all 0.3s ease;
+}
+
+.timeNormal {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.timeWarning {
+  background: linear-gradient(135deg, #ed8936, #dd6b20);
+  color: white;
+  animation: pulse 1s infinite;
+}
+
+.timeCritical {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+  animation: pulse 0.5s infinite;
+}
+
+.timerIcon {
+  font-size: 1.25rem;
+}
+
+.timeText {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .topbar {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .left, .center, .right {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .progress {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 12px 16px;
+    border-radius: 12px;
+  }
+  
+  .examName {
+    font-size: 1.125rem;
+  }
+  
+  .progress {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .timer {
+    font-size: 1rem;
+    padding: 6px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  
+  .examName {
+    font-size: 1rem;
+  }
+  
+  .progressText, .answered {
+    font-size: 0.8rem;
+  }
+  
+  .timer {
+    font-size: 0.9rem;
+  }
+}

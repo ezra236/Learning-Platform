@@ -1,0 +1,154 @@
+/* components/insights/EmptyState.module.css */
+.container {
+  grid-column: 1 / -1;
+  padding: 60px 20px;
+  text-align: center;
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content {
+  max-width: 400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.icon {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  opacity: 0.7;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px;
+}
+
+.message {
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.decoration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 200px;
+  height: 200px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  opacity: 0.1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.orb:nth-child(1) {
+  width: 80px;
+  height: 80px;
+  top: 10px;
+  left: 10px;
+}
+
+.orb:nth-child(2) {
+  width: 60px;
+  height: 60px;
+  bottom: 20px;
+  right: 30px;
+  animation-delay: 0.7s;
+}
+
+.orb:nth-child(3) {
+  width: 40px;
+  height: 40px;
+  top: 60px;
+  right: 20px;
+  animation-delay: 1.4s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.15;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 48px 16px;
+  }
+  
+  .icon {
+    font-size: 3.5rem;
+  }
+  
+  .title {
+    font-size: 1.3rem;
+  }
+  
+  .message {
+    font-size: 0.95rem;
+  }
+  
+  .decoration {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 40px 12px;
+  }
+  
+  .icon {
+    font-size: 3rem;
+  }
+  
+  .title {
+    font-size: 1.2rem;
+  }
+  
+  .message {
+    font-size: 0.9rem;
+  }
+  
+  .decoration {
+    width: 120px;
+    height: 120px;
+  }
+}

@@ -1,0 +1,138 @@
+/* paypal.module.css */
+.container {
+  padding: 0;
+}
+
+.box {
+  background: linear-gradient(135deg, #ffffff 0%, #fef7f0 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  box-shadow: 0 4px 20px rgba(30, 64, 175, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #0070ba 0%, #009cde 100%);
+}
+
+.box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(30, 64, 175, 0.12);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.paypalIcon {
+  font-size: 2rem;
+  color: #0070ba;
+}
+
+.header h3 {
+  margin: 0;
+  font-weight: 500;
+  color: #1f2937;
+  font-size: 1.25rem;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  font-weight: 500;
+}
+
+.amount { 
+  font-size: 1.5rem; 
+  color: #1e40af; 
+  font-weight: 600;
+}
+
+.securityNote {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  color: #059669;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.lockIcon {
+  font-size: 0.8rem;
+}
+
+.paypalButton {
+  margin: 1rem 0;
+}
+
+.loading { 
+  margin-top: 1rem; 
+  color: #6b7280; 
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 1rem;
+  background: #f3f4f6;
+  border-radius: 8px;
+  font-weight: 400;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .box {
+    padding: 1.25rem;
+  }
+  
+  .header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .amount {
+    font-size: 1.25rem;
+  }
+  
+  .summary {
+    padding: 0.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+}
