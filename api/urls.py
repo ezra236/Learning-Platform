@@ -1,8 +1,7 @@
 # api/urls.py
 from django.urls import path
 from .views import ATIListCreateAPIView, ATIGetAPIView, QuestionCreateAPIView, QuestionListAPIView, QuestionRetrieveUpdateAPIView, HESIListCreateAPIView, HESIGetAPIView, HESIQuestionCreateAPIView, HESIQuestionListAPIView, HESIQuestionRetrieveUpdateAPIView
-from . import views, public, user, analytics, announcement 
-from . import userexam
+from . import views, public, user, analytics, announcement, nclex
 from . import atiexam
 from . import ads
 from . import assistant
@@ -10,10 +9,80 @@ from . import newsletter
 from . import pdf
 from .import purchasepdf
 from .bookmark import BookmarkedQuestionsAPIView
-from .progress import ProgressATIView, ProgressHESIView
-from .user import SignupAPIView, VerifyCodeAPIView, ResendCodeAPIView, CsrfTokenView, SigninAPIView, AuthSessionAPIView, ProfileView, SendPasswordCodeView, VerifyPasswordCodeView, ResetPasswordView, MarketingQueueView, AnnouncementSeenView, CampaignSeenView
+from .user import SignupAPIView, VerifyCodeAPIView, ResendCodeAPIView, CsrfTokenView, SigninAPIView, AuthSessionAPIView, ProfileView, SendPasswordCodeView, VerifyPasswordCodeView, ResetPasswordView, MarketingQueueView, CampaignSeenView
+from .nclex import (
+    NCLEXExamListCreateAPIView,
+    NCLEXExamRetrieveUpdateAPIView,
+    NCLEXQuestionCreateAPIView,
+    NCLEXQuestionListAPIView,
+    NCLEXQuestionRetrieveUpdateAPIView,
+    NCLEXUploadImageAPIView,
+)
 
-urlpatterns = [
+from .nclexexam import (
+    NCLEXExamByNameAPIView,
+    NclexrnCheckAttemptAPIView,
+    NclexrnAttemptCreateAPIView,
+    NclexrnAttemptDetailAPIView,
+    NclexrnSubmitAttemptAPIView,
+    NclexrnReportCreateAPIView,
+    NclexrnBookmarkCreateAPIView,
+)
+
+from .nclexpn import (
+    PrepExamListCreateAPIView,
+    PrepExamRetrieveUpdateAPIView,
+    PrepQuestionCreateAPIView,
+    PrepQuestionListAPIView,
+    PrepQuestionRetrieveUpdateAPIView,
+    PrepUploadImageAPIView,
+)
+
+from .nclexpnexam import (
+    PrepExamByNameAPIView,
+    PrepCheckAttemptAPIView,
+    PrepAttemptCreateAPIView,
+    PrepAttemptDetailAPIView,
+    PrepSubmitAttemptAPIView,
+    PrepReportCreateAPIView,
+    PrepBookmarkCreateAPIView,
+)
+
+from .ati import AtiDashboardView
+from .hesi import HesiDashboardView
+
+urlpatterns = [ 
+
+    path("prep/exams/by-name/", PrepExamByNameAPIView.as_view(), name="prep_exams_by_name"),
+    path("prep/attempts/check/<int:exam_id>/", PrepCheckAttemptAPIView.as_view(), name="prep_check_attempt"),
+    path("prep/attempts/", PrepAttemptCreateAPIView.as_view(), name="prep_create_attempt"),
+    path("prep/attempts/<int:pk>/", PrepAttemptDetailAPIView.as_view(), name="prep_attempt_detail"),
+    path("prep/attempts/<int:pk>/submit/", PrepSubmitAttemptAPIView.as_view(), name="prep_submit_attempt"),
+    path("prep/reports/", PrepReportCreateAPIView.as_view(), name="prep_reports_create"),
+    path("prep/bookmarks/", PrepBookmarkCreateAPIView.as_view(), name="prep_bookmarks_create"),
+    
+    path("prep/exams/", PrepExamListCreateAPIView.as_view(), name="prep_exams_list_create"),
+    path("prep/exams/<int:pk>/", PrepExamRetrieveUpdateAPIView.as_view(), name="prep_exams_detail"),
+    path("prep/questions/", PrepQuestionListAPIView.as_view(), name="prep_questions_list"),
+    path("prep/questions/create/", PrepQuestionCreateAPIView.as_view(), name="prep_questions_create"),
+    path("prep/questions/<int:pk>/", PrepQuestionRetrieveUpdateAPIView.as_view(), name="prep_questions_detail"),
+    path("prep/upload-image/", PrepUploadImageAPIView.as_view(), name="prep_upload_image"),
+    
+    path("nclex/exams/by-name/", NCLEXExamByNameAPIView.as_view(), name="nclex_exams_by_name"),
+    path("nclex/attempts/check/<int:exam_id>/", NclexrnCheckAttemptAPIView.as_view(), name="nclex_check_attempt"),
+    path("nclex/attempts/", NclexrnAttemptCreateAPIView.as_view(), name="nclex_create_attempt"),
+    path("nclex/attempts/<int:pk>/", NclexrnAttemptDetailAPIView.as_view(), name="nclex_attempt_detail"),
+    path("nclex/attempts/<int:pk>/submit/", NclexrnSubmitAttemptAPIView.as_view(), name="nclex_submit_attempt"),
+    path("nclex/reports/", NclexrnReportCreateAPIView.as_view(), name="nclex_reports_create"),
+    path("nclex/bookmarks/", NclexrnBookmarkCreateAPIView.as_view(), name="nclex_bookmarks_create"),
+    
+    path("nclex/exams/", NCLEXExamListCreateAPIView.as_view(), name="nclex_exams_list_create"),
+    path("nclex/exams/<int:pk>/", NCLEXExamRetrieveUpdateAPIView.as_view(), name="nclex_exams_detail"),
+    path("nclex/questions/", NCLEXQuestionListAPIView.as_view(), name="nclex_questions_list"),
+    path("nclex/questions/create/", NCLEXQuestionCreateAPIView.as_view(), name="nclex_questions_create"),
+    path("nclex/questions/<int:pk>/", NCLEXQuestionRetrieveUpdateAPIView.as_view(), name="nclex_questions_detail"),
+    path("nclex/upload-image/", NCLEXUploadImageAPIView.as_view(), name="nclex_upload_image"),    
+
     path("pdfs/", pdf.pdfs_view, name="pdfs"),
     path("public/pdfs/", purchasepdf.public_pdfs_list, name="public_pdfs_list"),
     path("public/purchase_sessions/", purchasepdf.create_purchase_session, name="create_purchase_session"),
@@ -50,14 +119,10 @@ urlpatterns = [
     path("ati-teas-stats/", analytics.ati_teas_stats, name="ati_teas_stats"),
     path("hesi-a2-stats/", analytics.hesi_a2_stats, name="hesi_a2_stats"),
 
-    path("announcements/upload/", announcement.upload_announcement, name="announcement-upload"),
-    path("announcements/<uuid:pk>/", announcement.announcement_detail, name="api_announcement_detail"),
-    path("announcements/", announcement.announcements_list, name="api_announcements_list"),
     path("campaigns/", announcement.CampaignListCreateView.as_view(), name="campaign_list_create"),
     path("campaigns/<uuid:pk>/", announcement.CampaignRetrieveUpdateDeleteView.as_view(), name="campaign_detail_update_delete"),
 
     path("campaignsinsights/", views.campaigns_insights_view, name="api-campaigns-insights"),
-    path("announcementsinsights/", views.announcements_insights_view, name="api-announcements-insights"),
 
     path("admin/stats/", analytics.admin_stats_view, name="admin-stats"),
     path("admin/monthly-activity/", analytics.admin_monthly_activity_view, name="admin-monthly-activity"), 
@@ -79,8 +144,12 @@ urlpatterns = [
     path("signin/", SigninAPIView.as_view(), name="signin"),  # <-- new
     path("auth/session/", AuthSessionAPIView.as_view(), name="auth_session"),  
 
+    path("subscriptionsz/", user.SubscriptionListView.as_view(), name="api-subscriptions"),
+
+    path("user/ati-dashboard/", AtiDashboardView.as_view(), name="ati-dashboard"),
+    path("user/hesi-dashboard/", HesiDashboardView.as_view(), name="hesi-dashboard"),
+
     path("marketing/queue/", MarketingQueueView.as_view(), name="marketing-queue"),
-    path("marketing/announcement_seen/", AnnouncementSeenView.as_view(), name="announcement-seen"),
     path("marketing/campaign_seen/", CampaignSeenView.as_view(), name="campaign-seen"), 
 
     path("auth/profile/", ProfileView.as_view(), name="api-profile"),
@@ -92,9 +161,6 @@ urlpatterns = [
     path("intended-plans/", user.intended_plans_view, name="intended-plans"),
     path("intended-plans/<uuid:slip_id>/", user.intended_plan_detail_view, name="intended-plan-detail"),
     path("intended-plans/total/", user.intended_plans_total_view, name="intended-plans-total"),
-
-    path("subscribe-trial/", user.subscribe_trial, name="subscribe_trial"),
-    path("can-use-free-trial/", user.can_use_free_trial, name="can_use_free_trial"),
 
     path("paypal/create-order/", user.paypal_create_order_view, name="paypal-create-order"),
     path("paypal/capture-order/", user.paypal_capture_order_view, name="paypal-capture-order"),
@@ -113,6 +179,7 @@ urlpatterns = [
     path("reviews/submit/", public.submit_review, name="submit_review"),
     path("csrfs/", public.get_csrf_token, name="get_csrf_token"),
     path("plans/ati-teas-7/", public.plans_for_ati_teas_7, name="plans_ati_teas_7"),
+    path("plans/nclex/", public.plans_for_nclex, name="plans_nclex"),
     path("plans/hesia2/", public.plans_for_hesia2, name="plans_ati_teas_7"),
     path("plan/", ads.plans_all, name="plans_all"),
     path("newsletter/subscribe/", ads.subscribe_newsletter, name="newsletter_subscribe"),
@@ -129,8 +196,6 @@ urlpatterns = [
     path('hesi/questions/<int:pk>/', HESIQuestionRetrieveUpdateAPIView.as_view(), name='question-detail'),
     path('hesi/questions/list/', HESIQuestionListAPIView.as_view(), name='question-list'),    
 
-    path("user/exams-dashboard/", userexam.user_exams_dashboard, name="user_exams_dashboard"),
-
     path("exam/<path:examname>/", atiexam.ExamDetailAPIView.as_view(), name="api-exam-detail"), 
     path("attempt/<str:exam_id>/", atiexam.AttemptAPIView.as_view(), name="api-attempt"),
     path("bookmark/", atiexam.BookmarkAPIView.as_view(), name="api-bookmark"),
@@ -142,8 +207,6 @@ urlpatterns = [
     path("hesireport/", atiexam.HESIReportAPIView.as_view(), name="api-report"), 
 
     path('bookmarks/', BookmarkedQuestionsAPIView.as_view(), name='api-bookmarks'),
-    path('progress/ati/', ProgressATIView.as_view(), name='api-progress-ati'),
-    path('progress/hesi/', ProgressHESIView.as_view(), name='api-progress-hesi'),
 
     path("subscriptionsdata/", views.subscriptions_list, name="subscriptions_list"),
     path("subscriptionsdata/<uuid:id>/", views.subscription_delete, name="subscription_delete"),

@@ -1,4 +1,4 @@
-# views.py
+# exam.py
 
 from django.conf import settings
 from django.forms.models import model_to_dict
@@ -29,18 +29,9 @@ def add_cors_headers(resp, request):
     return resp
 
 
-class CsrfTokenView(APIView):
-    permission_classes = []
-    authentication_classes = []
-
-    @method_decorator(ensure_csrf_cookie)
-    def get(self, request, format=None):
-        from django.middleware.csrf import get_token
-        token = get_token(request)
-        data = {"csrfToken": token}
-        resp = Response(data)
-        return add_cors_headers(resp, request)
-
+from urllib.parse import unquote_plus
+from django.http import Http404
+from django.shortcuts import get_object_or_404
 
 class ExamDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -50,8 +41,23 @@ class ExamDetailAPIView(APIView):
         if not getattr(request.user, "is_regular_user", False):
             return add_cors_headers(Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN), request)
         
-        # examname is URL-encoded in front-end; try to decode or search by name
-        exam = get_object_or_404(ATI, name=examname)
+        # examname may be URL-encoded when it arrives (e.g. "THERE%20IS%20NO%20GOD").
+        # Decode it safely first, then attempt lookups.
+        decoded_name = unquote_plus(examname)  # converts %20 and + to spaces, etc.
+
+        # Try exact match first, then case-insensitive fallback.
+        try:
+            exam = get_object_or_404(ATI, name=decoded_name)
+        except Http404:
+            # fallback to case-insensitive exact
+            exam = ATI.objects.filter(name__iexact=decoded_name).first()
+            if not exam:
+                # last resort: fallback to a contains search (useful if there are small differences)
+                # Note: you can remove this if you don't want fuzzy fallback.
+                exam = ATI.objects.filter(name__icontains=decoded_name).first()
+            if not exam:
+                raise Http404
+
         # build nested JSON
         questions = []
         for q in exam.questions.all().order_by("order"):
@@ -104,8 +110,23 @@ class HESIExamDetailAPIView(APIView):
         if not getattr(request.user, "is_regular_user", False):
             return add_cors_headers(Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN), request)
         
-        # examname is URL-encoded in front-end; try to decode or search by name
-        exam = get_object_or_404(HESI, name=examname)
+        # examname may be URL-encoded when it arrives (e.g. "THERE%20IS%20NO%20GOD").
+        # Decode it safely first, then attempt lookups.
+        decoded_name = unquote_plus(examname)  # converts %20 and + to spaces, etc.
+
+        # Try exact match first, then case-insensitive fallback.
+        try:
+            exam = get_object_or_404(HESI, name=decoded_name)
+        except Http404:
+            # fallback to case-insensitive exact
+            exam = HESI.objects.filter(name__iexact=decoded_name).first()
+            if not exam:
+                # last resort: fallback to a contains search (useful if there are small differences)
+                # Remove if you prefer strict matching.
+                exam = HESI.objects.filter(name__icontains=decoded_name).first()
+            if not exam:
+                raise Http404
+
         # build nested JSON
         questions = []
         for q in exam.questions.all().order_by("order"):
@@ -146,8 +167,7 @@ class HESIExamDetailAPIView(APIView):
             "total_questions": exam.questions.count(),
         }
         resp = Response(data)
-        return add_cors_headers(resp, request)
-    
+        return add_cors_headers(resp, request) 
 
 
 

@@ -259,3 +259,30 @@ def plans_for_hesia2(request):
             "updated_at": p.updated_at.isoformat() if p.updated_at else None,
         })
     return JsonResponse(data, safe=False)
+
+
+
+@require_GET
+def plans_for_nclex(request):
+    """
+    Public API: return paid plans for HESI A2 only (exclude free/trial plans).
+    """
+    qs = Plan.objects.filter(
+        exam_type=ExamType.NCLEX,
+        price__gt=Decimal("0.00"),
+    )
+    data = []
+    for p in qs:
+        data.append({
+            "id": p.id,
+            "exam_type": p.exam_type,
+            "duration_days": p.duration_days,
+            "title": p.title,
+            "price": str(p.price),          # Decimal -> string for JSON
+            "currency": p.currency,
+            "features": [{"id": f.id, "name": f.name, "slug": f.slug} for f in p.features.all()],
+            "active": p.active,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+            "updated_at": p.updated_at.isoformat() if p.updated_at else None,
+        })
+    return JsonResponse(data, safe=False)

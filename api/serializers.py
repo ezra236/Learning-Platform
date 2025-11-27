@@ -83,18 +83,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 # api/serializers.py
 from rest_framework import serializers
-from .models import Announcement, Campaign
-
-class AnnouncementSerializer(serializers.ModelSerializer):
-    type = serializers.SerializerMethodField(default='announcement')
-
-    class Meta:
-        model = Announcement
-        fields = ("id", "format", "mediapath", "public_id", "created_at", "type")
-
-    def get_type(self, obj):
-        return "announcement"
-
+from .models import Campaign
 
 class CampaignSerializers(serializers.ModelSerializer):
     type = serializers.SerializerMethodField(default='campaign')
@@ -472,6 +461,525 @@ class HESISerializer(serializers.ModelSerializer):
         model = HESI
         fields = ('id', 'name', 'completed', 'questions')
 
+
+
+
+
+from rest_framework import serializers
+from .models import (
+    NCLEXExam, NCLEXQuestion, NCLEXChoice, NCLEXCase,
+    NCLEXAction, NCLEXPotentialCondition, NCLEXParameter
+)
+
+class NCLEXChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXChoice
+        fields = ['id', 'label', 'text', 'is_correct', 'correct_order', 'display_order']
+
+
+class NCLEXCaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXCase
+        fields = ['id', 'heading', 'case_text']
+
+
+# --- new serializers for format 9 lists ---
+class NCLEXActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXAction
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class NCLEXPotentialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXPotentialCondition
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class NCLEXParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXParameter
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class NCLEXQuestionSerializer(serializers.ModelSerializer):
+    choices = NCLEXChoiceSerializer(many=True, required=False)
+    cases = NCLEXCaseSerializer(many=True, required=False)
+    actions = NCLEXActionSerializer(many=True, required=False)
+    potentials = NCLEXPotentialSerializer(many=True, required=False)
+    parameters = NCLEXParameterSerializer(many=True, required=False)
+    exam_id = serializers.PrimaryKeyRelatedField(queryset=NCLEXExam.objects.all(), source='exam', write_only=True)
+
+    class Meta:
+        model = NCLEXQuestion
+        fields = [
+            'id', 'exam_id', 'format', 'order',
+            'question_text', 'explanation', 'paragraph', 'image_url',
+            'blank_answer',
+            # headings for format 5
+            'heading1', 'heading2', 'heading3',
+            'choices', 'cases', 'actions', 'potentials', 'parameters',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def validate(self, data):
+        exam = data.get('exam') or getattr(self.instance, 'exam', None)
+        if exam and exam.is_completed and (self.context.get('creating', False)):
+            raise serializers.ValidationError("Cannot add questions for a completed exam.")
+        return data
+
+    def create(self, validated_data):
+        choices_data = validated_data.pop('choices', [])
+        cases_data = validated_data.pop('cases', [])
+        actions_data = validated_data.pop('actions', [])
+        potentials_data = validated_data.pop('potentials', [])
+        parameters_data = validated_data.pop('parameters', [])
+        exam = validated_data.pop('exam')
+        validated_data['exam'] = exam
+        q = NCLEXQuestion.objects.create(**validated_data)
+
+        for idx, c in enumerate(choices_data, start=1):
+            NCLEXChoice.objects.create(
+                question=q,
+                label=c.get('label') or f"Choice {idx}",
+                text=c.get('text', ''),
+                is_correct=c.get('is_correct', False),
+                correct_order=c.get('correct_order'),
+                display_order=c.get('display_order', idx),
+            )
+
+        for c in cases_data:
+            NCLEXCase.objects.create(question=q, heading=c['heading'], case_text=c['case_text'])
+
+        # create actions/potentials/parameters
+        for idx, a in enumerate(actions_data, start=1):
+            NCLEXAction.objects.create(
+                question=q,
+                text=a.get('text', ''),
+                is_correct=a.get('is_correct', False),
+                display_order=a.get('display_order', idx),
+            )
+        for idx, p in enumerate(potentials_data, start=1):
+            NCLEXPotentialCondition.objects.create(
+                question=q,
+                text=p.get('text', ''),
+                is_correct=p.get('is_correct', False),
+                display_order=p.get('display_order', idx),
+            )
+        for idx, pr in enumerate(parameters_data, start=1):
+            NCLEXParameter.objects.create(
+                question=q,
+                text=pr.get('text', ''),
+                is_correct=pr.get('is_correct', False),
+                display_order=pr.get('display_order', idx),
+            )
+
+        return q
+
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop('choices', None)
+        cases_data = validated_data.pop('cases', None)
+        actions_data = validated_data.pop('actions', None)
+        potentials_data = validated_data.pop('potentials', None)
+        parameters_data = validated_data.pop('parameters', None)
+
+        # Update scalar fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if choices_data is not None:
+            instance.choices.all().delete()
+            for idx, c in enumerate(choices_data, start=1):
+                NCLEXChoice.objects.create(
+                    question=instance,
+                    label=c.get('label') or f"Choice {idx}",
+                    text=c.get('text', ''),
+                    is_correct=c.get('is_correct', False),
+                    correct_order=c.get('correct_order'),
+                    display_order=c.get('display_order', idx),
+                )
+
+        if cases_data is not None:
+            instance.cases.all().delete()
+            for c in cases_data:
+                NCLEXCase.objects.create(question=instance, heading=c['heading'], case_text=c['case_text'])
+
+        # actions
+        if actions_data is not None:
+            instance.actions.all().delete()
+            for idx, a in enumerate(actions_data, start=1):
+                NCLEXAction.objects.create(
+                    question=instance,
+                    text=a.get('text', ''),
+                    is_correct=a.get('is_correct', False),
+                    display_order=a.get('display_order', idx),
+                )
+
+        # potentials
+        if potentials_data is not None:
+            instance.potentials.all().delete()
+            for idx, p in enumerate(potentials_data, start=1):
+                NCLEXPotentialCondition.objects.create(
+                    question=instance,
+                    text=p.get('text', ''),
+                    is_correct=p.get('is_correct', False),
+                    display_order=p.get('display_order', idx),
+                )
+
+        # parameters
+        if parameters_data is not None:
+            instance.parameters.all().delete()
+            for idx, pr in enumerate(parameters_data, start=1):
+                NCLEXParameter.objects.create(
+                    question=instance,
+                    text=pr.get('text', ''),
+                    is_correct=pr.get('is_correct', False),
+                    display_order=pr.get('display_order', idx),
+                )
+
+        return instance
+
+
+class NCLEXExamSerializer(serializers.ModelSerializer):
+    questions = NCLEXQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NCLEXExam
+        fields = ['id', 'name', 'is_completed', 'duration_minutes', 'created_at', 'questions']
+        read_only_fields = ['id', 'created_at', 'questions']
+
+
+
+
+
+
+from rest_framework import serializers
+from .models import NCLEXExam, NCLEXQuestion, NCLEXChoice, NCLEXCase, NclexrnAttempt, NclexrnReport, NclexrnBookmark, NCLEXAction, NCLEXPotentialCondition, NCLEXParameter
+
+class NclexrnChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXChoice
+        fields = ('id','label','text','is_correct','correct_order','display_order')
+
+class NclexrnCaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXCase
+        fields = ('id','heading','case_text')
+
+class NclexrnActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXAction
+        fields = ('id','text','is_correct','display_order')
+
+class NclexrnPotentialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXPotentialCondition
+        fields = ('id','text','is_correct','display_order')
+
+class NclexrnParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NCLEXParameter
+        fields = ('id','text','is_correct','display_order')
+
+class NclexrnQuestionSerializer(serializers.ModelSerializer):
+    choices = NclexrnChoiceSerializer(many=True, read_only=True)
+    cases = NclexrnCaseSerializer(many=True, read_only=True)
+    actions = NclexrnActionSerializer(many=True, read_only=True)
+    potentials = NclexrnPotentialSerializer(many=True, read_only=True)
+    parameters = NclexrnParameterSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = NCLEXQuestion
+        fields = (
+            'id','exam','format','order','question_text','explanation','paragraph','image_url',
+            'blank_answer','heading1','heading2','heading3','choices','cases',
+            'actions','potentials','parameters'
+        )
+
+class NclexrnExamSerializer(serializers.ModelSerializer):
+    questions = NclexrnQuestionSerializer(many=True, read_only=True)
+    class Meta:
+        model = NCLEXExam
+        fields = ('id','name','is_completed','duration_minutes','created_at','questions')
+
+class NclexrnAttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NclexrnAttempt
+        fields = '__all__'
+        read_only_fields = ('user','started_at','completed_at')
+
+class NclexrnReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NclexrnReport
+        fields = '__all__'
+        read_only_fields = ('user','created_at')
+
+class NclexrnBookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NclexrnBookmark
+        fields = '__all__'
+        read_only_fields = ('user','created_at')
+
+
+
+
+
+
+
+from rest_framework import serializers
+from .models import (
+    PrepExam, PrepQuestion, PrepChoice, PrepCase,
+    PrepAction, PrepPotentialCondition, PrepParameter,
+    PrepAttempt, PrepReport, PrepBookmark
+)
+
+# --- main edit/create serializers for admin-like API ---
+class PrepChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepChoice
+        fields = ['id', 'label', 'text', 'is_correct', 'correct_order', 'display_order']
+
+
+class PrepCaseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepCase
+        fields = ['id', 'heading', 'case_text']
+
+
+# --- new serializers for format 9 lists ---
+class PrepActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepAction
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class PrepPotentialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepPotentialCondition
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class PrepParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepParameter
+        fields = ['id', 'text', 'is_correct', 'display_order']
+
+
+class PrepQuestionSerializer(serializers.ModelSerializer):
+    choices = PrepChoiceSerializer(many=True, required=False)
+    cases = PrepCaseSerializer(many=True, required=False)
+    actions = PrepActionSerializer(many=True, required=False)
+    potentials = PrepPotentialSerializer(many=True, required=False)
+    parameters = PrepParameterSerializer(many=True, required=False)
+    exam_id = serializers.PrimaryKeyRelatedField(queryset=PrepExam.objects.all(), source='exam', write_only=True)
+
+    class Meta:
+        model = PrepQuestion
+        fields = [
+            'id', 'exam_id', 'format', 'order',
+            'question_text', 'explanation', 'paragraph', 'image_url',
+            'blank_answer',
+            # headings for format 5
+            'heading1', 'heading2', 'heading3',
+            'choices', 'cases', 'actions', 'potentials', 'parameters',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def validate(self, data):
+        exam = data.get('exam') or getattr(self.instance, 'exam', None)
+        if exam and exam.is_completed and (self.context.get('creating', False)):
+            raise serializers.ValidationError("Cannot add questions for a completed exam.")
+        return data
+
+    def create(self, validated_data):
+        choices_data = validated_data.pop('choices', [])
+        cases_data = validated_data.pop('cases', [])
+        actions_data = validated_data.pop('actions', [])
+        potentials_data = validated_data.pop('potentials', [])
+        parameters_data = validated_data.pop('parameters', [])
+        exam = validated_data.pop('exam')
+        validated_data['exam'] = exam
+        q = PrepQuestion.objects.create(**validated_data)
+
+        for idx, c in enumerate(choices_data, start=1):
+            PrepChoice.objects.create(
+                question=q,
+                label=c.get('label') or f"Choice {idx}",
+                text=c.get('text', ''),
+                is_correct=c.get('is_correct', False),
+                correct_order=c.get('correct_order'),
+                display_order=c.get('display_order', idx),
+            )
+
+        for c in cases_data:
+            PrepCase.objects.create(question=q, heading=c['heading'], case_text=c['case_text'])
+
+        # create actions/potentials/parameters
+        for idx, a in enumerate(actions_data, start=1):
+            PrepAction.objects.create(
+                question=q,
+                text=a.get('text', ''),
+                is_correct=a.get('is_correct', False),
+                display_order=a.get('display_order', idx),
+            )
+        for idx, p in enumerate(potentials_data, start=1):
+            PrepPotentialCondition.objects.create(
+                question=q,
+                text=p.get('text', ''),
+                is_correct=p.get('is_correct', False),
+                display_order=p.get('display_order', idx),
+            )
+        for idx, pr in enumerate(parameters_data, start=1):
+            PrepParameter.objects.create(
+                question=q,
+                text=pr.get('text', ''),
+                is_correct=pr.get('is_correct', False),
+                display_order=pr.get('display_order', idx),
+            )
+
+        return q
+
+    def update(self, instance, validated_data):
+        choices_data = validated_data.pop('choices', None)
+        cases_data = validated_data.pop('cases', None)
+        actions_data = validated_data.pop('actions', None)
+        potentials_data = validated_data.pop('potentials', None)
+        parameters_data = validated_data.pop('parameters', None)
+
+        # Update scalar fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if choices_data is not None:
+            instance.choices.all().delete()
+            for idx, c in enumerate(choices_data, start=1):
+                PrepChoice.objects.create(
+                    question=instance,
+                    label=c.get('label') or f"Choice {idx}",
+                    text=c.get('text', ''),
+                    is_correct=c.get('is_correct', False),
+                    correct_order=c.get('correct_order'),
+                    display_order=c.get('display_order', idx),
+                )
+
+        if cases_data is not None:
+            instance.cases.all().delete()
+            for c in cases_data:
+                PrepCase.objects.create(question=instance, heading=c['heading'], case_text=c['case_text'])
+
+        # actions
+        if actions_data is not None:
+            instance.actions.all().delete()
+            for idx, a in enumerate(actions_data, start=1):
+                PrepAction.objects.create(
+                    question=instance,
+                    text=a.get('text', ''),
+                    is_correct=a.get('is_correct', False),
+                    display_order=a.get('display_order', idx),
+                )
+
+        # potentials
+        if potentials_data is not None:
+            instance.potentials.all().delete()
+            for idx, p in enumerate(potentials_data, start=1):
+                PrepPotentialCondition.objects.create(
+                    question=instance,
+                    text=p.get('text', ''),
+                    is_correct=p.get('is_correct', False),
+                    display_order=p.get('display_order', idx),
+                )
+
+        # parameters
+        if parameters_data is not None:
+            instance.parameters.all().delete()
+            for idx, pr in enumerate(parameters_data, start=1):
+                PrepParameter.objects.create(
+                    question=instance,
+                    text=pr.get('text', ''),
+                    is_correct=pr.get('is_correct', False),
+                    display_order=pr.get('display_order', idx),
+                )
+
+        return instance
+
+
+class PrepExamSerializer(serializers.ModelSerializer):
+    questions = PrepQuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PrepExam
+        fields = ['id', 'name', 'is_completed', 'duration_minutes', 'created_at', 'questions']
+        read_only_fields = ['id', 'created_at', 'questions']
+
+
+# --- the "runtime"/client serializers (read-only friendly) ---
+class PrepChoiceReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepChoice
+        fields = ('id','label','text','is_correct','correct_order','display_order')
+
+class PrepCaseReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepCase
+        fields = ('id','heading','case_text')
+
+class PrepActionReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepAction
+        fields = ('id','text','is_correct','display_order')
+
+class PrepPotentialReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepPotentialCondition
+        fields = ('id','text','is_correct','display_order')
+
+class PrepParameterReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepParameter
+        fields = ('id','text','is_correct','display_order')
+
+class PrepQuestionReadSerializer(serializers.ModelSerializer):
+    choices = PrepChoiceReadSerializer(many=True, read_only=True)
+    cases = PrepCaseReadSerializer(many=True, read_only=True)
+    actions = PrepActionReadSerializer(many=True, read_only=True)
+    potentials = PrepPotentialReadSerializer(many=True, read_only=True)
+    parameters = PrepParameterReadSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PrepQuestion
+        fields = (
+            'id','exam','format','order','question_text','explanation','paragraph','image_url',
+            'blank_answer','heading1','heading2','heading3','choices','cases',
+            'actions','potentials','parameters'
+        )
+
+class PrepExamReadSerializer(serializers.ModelSerializer):
+    questions = PrepQuestionReadSerializer(many=True, read_only=True)
+    class Meta:
+        model = PrepExam
+        fields = ('id','name','is_completed','duration_minutes','created_at','questions')
+
+class PrepAttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepAttempt
+        fields = '__all__'
+        read_only_fields = ('user','started_at','completed_at')
+
+class PrepReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepReport
+        fields = '__all__'
+        read_only_fields = ('user','created_at')
+
+class PrepBookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrepBookmark
+        fields = '__all__'
+        read_only_fields = ('user','created_at')
 
 
 

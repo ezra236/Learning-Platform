@@ -319,7 +319,11 @@ def plans_public_view(request):
     grouped = []
     for exam in EXAM_ORDER:
         # NOTE: Only active plans are returned
-        plans_qs = Plan.objects.filter(exam_type=exam, active=True).order_by("duration_days").prefetch_related("features")
+        # Exclude free trial plans (7-day or price == 0.00)
+        plans_qs = Plan.objects.filter(exam_type=exam, active=True) \
+            .exclude(Q(duration_days=7) | Q(price=Decimal("0.00"))) \
+            .order_by("duration_days") \
+            .prefetch_related("features")
         plans = []
         for p in plans_qs:
             plans.append({
@@ -340,7 +344,6 @@ def plans_public_view(request):
         })
 
     return _attach_cors_headers(JsonResponse({"exam_groups": grouped}, status=200), request)
-
 
 
 @require_http_methods(["GET", "POST", "OPTIONS"])
@@ -968,16 +971,18 @@ class ResetPasswordView(APIView):
 from datetime import timedelta
 from django.utils import timezone
 from django.db import transaction
-from django.db.models import Q, OuterRef, Subquery
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status, permissions, authentication
-from .models import Announcement, AnnouncementSeen, Campaign, CampaignView
-from .serializers import AnnouncementSerializer, CampaignSerializers
+from rest_framework import status, permissions
+
+from .models import Campaign, CampaignView
+from .serializers import CampaignSerializers
+
 
 class IsRegularUser(permissions.BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and getattr(request.user, "is_regular_user", False))
+
 
 class MarketingQueueView(APIView):
     permission_classes = [IsRegularUser]
@@ -986,28 +991,19 @@ class MarketingQueueView(APIView):
         user = request.user
         now = timezone.now()
 
-        # Announcements: only active, not yet seen by this user
-        # use reverse relation 'seen_by' from model: AnnouncementSeen with related_name="seen_by"
-        announcements_qs = Announcement.objects.filter(is_active=True).exclude(seen_by__user=user)
-        announcements = AnnouncementSerializer(announcements_qs, many=True).data
-
         # Campaigns: only active campaigns and either:
         #  - no CampaignView exists for this user+campaign, or
         #  - the existing CampaignView.next_time_to_show <= now (i.e. ready to be shown again)
-        # We'll get all active campaigns and filter per-item in Python for clarity
         campaigns_to_show = []
         active_campaigns = Campaign.objects.filter(is_active=True).order_by('-created_at')
         for campaign in active_campaigns:
             if user is None:
-                # if somehow unauthenticated (shouldn't happen due to permission), skip
                 continue
 
             cv = CampaignView.objects.filter(campaign=campaign, user=user).order_by('-seen_at').first()
             if cv is None:
-                # not seen by user yet -> show immediately
                 campaigns_to_show.append(campaign)
             else:
-                # show only if next_time_to_show is set and <= now, or if it's None but seen_at + 7min <= now
                 if cv.next_time_to_show is not None:
                     if cv.next_time_to_show <= now:
                         campaigns_to_show.append(campaign)
@@ -1018,33 +1014,10 @@ class MarketingQueueView(APIView):
 
         campaigns = CampaignSerializers(campaigns_to_show, many=True).data
 
-        # return both lists so frontend can merge into a queue. The frontend can prefer announcements first, or mix.
+        # return campaigns only (no announcements)
         return Response({
-            "announcements": announcements,
             "campaigns": campaigns,
         })
-
-
-class AnnouncementSeenView(APIView):
-    """
-    Called when an announcement has been shown to the user (immediately recorded).
-    """
-    permission_classes = [IsRegularUser]
-
-    def post(self, request, format=None):
-        user = request.user
-        announcement_id = request.data.get("announcement_id")
-        if not announcement_id:
-            return Response({"detail": "announcement_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            announcement = Announcement.objects.get(pk=announcement_id, is_active=True)
-        except Announcement.DoesNotExist:
-            return Response({"detail": "announcement not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Create AnnouncementSeen; unique_together prevents duplicates
-        obj, created = AnnouncementSeen.objects.get_or_create(user=user, announcement=announcement)
-        return Response({"created": created})
 
 
 class CampaignSeenView(APIView):
@@ -1071,7 +1044,6 @@ class CampaignSeenView(APIView):
         now = timezone.now()
         next_time = now + timedelta(minutes=7)
 
-        # Use atomic get_or_create -> update
         with transaction.atomic():
             cv, created = CampaignView.objects.get_or_create(campaign=campaign, user=user, defaults={
                 "ip_address": ip_address,
@@ -1080,7 +1052,6 @@ class CampaignSeenView(APIView):
                 "next_time_to_show": next_time,
             })
             if not created:
-                # update existing
                 cv.seen_at = now
                 cv.ip_address = ip_address or cv.ip_address
                 cv.user_agent = user_agent or cv.user_agent
@@ -1096,73 +1067,70 @@ class CampaignSeenView(APIView):
 
 
 
-
-
-from datetime import timedelta
-
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST, require_GET
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
+from django.middleware.csrf import get_token
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.conf import settings
 from django.db import transaction
 
-from .models import Plan, Subscription, ExamType, FreeTrial
+from .models import Subscription, Plan
 
 
-@login_required
-@require_POST
-def subscribe_trial(request):
+class SubscriptionListView(APIView):
     """
-    Create trial subscriptions (7 days) for the currently authenticated user
-    for ATI_TEAS_7 and HESI_A2. Also records the user's email in FreeTrial.
-    If the user/email already has a FreeTrial entry, returns 409.
+    Return the authenticated regular user's subscriptions (if any) and active plans the user
+    doesn't already have (so frontend can render "Explore"/available plans).
     """
-    user = request.user
-    now = timezone.now()
-    duration_days = 7
-    exam_types = [ExamType.ATI_TEAS_7, ExamType.HESI_A2]
+    def get(self, request, format=None):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return Response({"detail": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    # If email is already in FreeTrial -> disallow
-    if FreeTrial.objects.filter(email__iexact=user.email).exists():
-        return JsonResponse({"detail": "Free trial already used for this account/email."}, status=409)
+        # ensure only regular users use this view
+        if not getattr(user, "is_regular_user", False):
+            return Response({"detail": "Only regular users can access subscription data."}, status=status.HTTP_403_FORBIDDEN)
 
-    created_subs = []
+        # Get subscriptions for user
+        subs_qs = Subscription.objects.filter(user=user).select_related("plan").order_by("-created_at")
+        subscriptions = []
+        subscribed_plan_ids = set()
 
-    with transaction.atomic():
-        # create or ensure FreeTrial entry first to reserve trial
-        free_trial = FreeTrial.objects.create(email=user.email, user=user)
-
-        for exam in exam_types:
-            # get or create a trial plan (price=0)
-            plan = Plan.get_or_create_trial(exam, days=duration_days)
-
-            # create subscription record
-            subscription = Subscription.objects.create(
-                user=user,
-                plan=plan,
-                start_date=now,
-                finish_date=now + timedelta(days=duration_days),
-                amount=0,
-                currency=plan.currency,
-            )
-
-            created_subs.append({
-                "subscription_id": str(subscription.id),
-                "plan_id": plan.id and str(plan.id),
-                "exam_type": plan.get_exam_type_display(),
-                "start_date": subscription.start_date.isoformat(),
-                "finish_date": subscription.finish_date.isoformat(),
+        for s in subs_qs:
+            subscribed_plan_ids.add(s.plan_id)
+            plan = s.plan
+            subscriptions.append({
+                "id": str(s.id),
+                "plan": {
+                    "id": str(plan.id),
+                    "exam_type": plan.exam_type,
+                    "duration_days": plan.duration_days,
+                    "title": plan.title,
+                    "price": str(plan.price),
+                    "currency": plan.currency,
+                },
+                "start_date": s.start_date.isoformat() if s.start_date else None,
+                "finish_date": s.finish_date.isoformat() if s.finish_date else None,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "paypal_order_id": s.paypal_order_id,
             })
 
-    return JsonResponse({"status": "ok", "created": created_subs, "free_trial_recorded": str(free_trial.id)}, status=201)
+        # Available plans: active plans not subscribed to by user
+        available_qs = Plan.objects.filter(active=True).exclude(id__in=subscribed_plan_ids).order_by("exam_type", "duration_days")
+        available_plans = []
+        for p in available_qs:
+            available_plans.append({
+                "id": str(p.id),
+                "exam_type": p.exam_type,
+                "duration_days": p.duration_days,
+                "title": p.title,
+                "price": str(p.price),
+                "currency": p.currency,
+            })
 
-
-@login_required
-@require_GET
-def can_use_free_trial(request):
-    """
-    Return whether the session user is allowed to start a free trial.
-    """
-    user = request.user
-    allowed = not FreeTrial.objects.filter(email__iexact=user.email).exists()
-    return JsonResponse({"allowed": allowed}, status=200)
+        return Response({
+            "subscriptions": subscriptions,
+            "available_plans": available_plans,
+        }, status=status.HTTP_200_OK)

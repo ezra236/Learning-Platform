@@ -13,7 +13,7 @@ import os
 import json
 from django.contrib.auth import login, logout, authenticate
 
-@ensure_csrf_cookie
+@ensure_csrf_cookie 
 def csrf_token_view(request):
     # ensures csrftoken cookie is set; returns a small JSON resp
     return JsonResponse({"detail": "CSRF cookie set"})
@@ -829,7 +829,7 @@ from django.views.decorators.http import require_GET
 from django.utils import timezone
 from django.db.models import Count
 
-from .models import Campaign, Announcement
+from .models import Campaign
 
 def _user_is_superadmin(user):
     # Your custom property exists on the model
@@ -857,28 +857,6 @@ def campaigns_insights_view(request):
             "created_at": c.created_at.isoformat() if c.created_at else None,
             "updated_at": c.updated_at.isoformat() if getattr(c, "updated_at", None) else None,
             "views_count": c.views_count or 0,
-        })
-
-    return JsonResponse({"results": results}, safe=False)
-
-
-@login_required
-@require_GET
-def announcements_insights_view(request):
-    if not _user_is_superadmin(request.user):
-        return HttpResponseForbidden(JsonResponse({"detail": "Requires superadmin"}))
-
-    qs = Announcement.objects.all().annotate(views_count=Count("seen_by"))
-    results = []
-    for a in qs:
-        results.append({
-            "id": str(a.id),
-            "format": a.format,
-            "mediapath": a.mediapath,
-            "public_id": a.public_id,
-            "is_active": a.is_active,
-            "created_at": a.created_at.isoformat() if a.created_at else None,
-            "views_count": a.views_count or 0,
         })
 
     return JsonResponse({"results": results}, safe=False)
@@ -1422,25 +1400,25 @@ def plan_edit_api(request, plan_id):
 
 
 
-
 import json
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
-from .models import ATI, HESI
-
-# Use this exact function as requested:
-@ensure_csrf_cookie
-def csrf_token_view(request):
-    # ensures csrftoken cookie is set; returns a small JSON resp
-    return JsonResponse({"detail": "CSRF cookie set"})
-
+from .models import ATI, HESI, NCLEXExam
 
 # Helper to map type string -> model
 VALID_TYPES = {
     "ati": ATI,
     "hesi": HESI,
+    "nclex": NCLEXExam,
+}
+
+# Friendly display names for responses/messages
+DISPLAY_NAMES = {
+    "ati": "ATI",
+    "hesi": "HESI",
+    "nclex": "NCLEX-RN",
 }
 
 
@@ -1450,59 +1428,77 @@ def _get_model_for_type(type_str):
     return VALID_TYPES.get(type_str.lower())
 
 
+def _serialize_exam(e):
+    """
+    Normalize exam object to a consistent dict used by frontend.
+    Different models may use different field names (e.g., is_completed vs completed).
+    """
+    # completed: prefer is_completed, then completed, then False
+    completed = getattr(e, "is_completed", None)
+    if completed is None:
+        completed = getattr(e, "completed", False)
+
+    return {
+        "id": str(e.id),
+        "name": getattr(e, "name", "") or "",
+        "isfree": bool(getattr(e, "isfree", False)),
+        "completed": bool(completed),
+    }
+
+
 @require_http_methods(["GET"])
 def exams_list(request):
     """
-    GET /api/exams/?type=ati|hesi
+    GET /api/exams/?type=ati|hesi|nclex
     Returns list of exams for given type.
     """
     type_str = request.GET.get("type")
     Model = _get_model_for_type(type_str)
     if Model is None:
-        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi or ?type=nclex")
 
-    exams = Model.objects.all().order_by('-id')
-    data = [
-        {"id": str(e.id), "name": e.name, "isfree": getattr(e, "isfree", False), "completed": getattr(e, "completed", False)}
-        for e in exams
-    ]
+    exams = Model.objects.all().order_by("-id")
+    data = [_serialize_exam(e) for e in exams]
     return JsonResponse(data, safe=False)
 
 
 @require_http_methods(["DELETE"])
 def exams_delete(request, pk):
     """
-    DELETE /api/exams/<uuid:pk>/?type=ati|hesi
+    DELETE /api/exams/<uuid:pk>/?type=ati|hesi|nclex
     Deletes the exam (cascade deletes related content via models).
     """
     type_str = request.GET.get("type")
     Model = _get_model_for_type(type_str)
     if Model is None:
-        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi or ?type=nclex")
 
     exam = get_object_or_404(Model, pk=pk)
     exam.delete()
-    return JsonResponse({"detail": f"{type_str.upper()} exam deleted", "id": str(pk)})
+    disp = DISPLAY_NAMES.get(type_str.lower(), type_str.upper())
+    return JsonResponse({"detail": f"{disp} exam deleted", "id": str(pk)})
 
 
 @require_http_methods(["POST"])
 def exams_set_free(request, pk):
     """
-    POST /api/exams/<uuid:pk>/set_free/?type=ati|hesi
+    POST /api/exams/<uuid:pk>/set_free/?type=ati|hesi|nclex
     Body (optional): {"isfree": true/false} (defaults to true if omitted)
     """
     type_str = request.GET.get("type")
     Model = _get_model_for_type(type_str)
     if Model is None:
-        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi")
+        return HttpResponseBadRequest("Invalid or missing 'type' query parameter. Use ?type=ati or ?type=hesi or ?type=nclex")
 
     exam = get_object_or_404(Model, pk=pk)
     try:
-        payload = json.loads(request.body.decode() or "{}")
+        raw_body = request.body.decode() or "{}"
+        payload = json.loads(raw_body)
     except json.JSONDecodeError:
         return HttpResponseBadRequest("Invalid JSON")
 
     isfree = payload.get("isfree", True)
     exam.isfree = bool(isfree)
     exam.save(update_fields=["isfree"])
-    return JsonResponse({"detail": f"{type_str.upper()} exam updated", "id": str(pk), "isfree": exam.isfree})
+    disp = DISPLAY_NAMES.get(type_str.lower(), type_str.upper())
+    return JsonResponse({"detail": f"{disp} exam updated", "id": str(pk), "isfree": exam.isfree})

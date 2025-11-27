@@ -509,52 +509,6 @@ class FreeTrial(models.Model):
 
 
 
-import uuid
-from django.conf import settings
-from django.db import models
-
-class Announcement(models.Model):
-    class FormatChoices:
-        IMAGE = "image"
-        VIDEO = "video"
-        CHOICES = [
-            (IMAGE, "Image"),
-            (VIDEO, "Video"),
-        ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    format = models.CharField(max_length=16, choices=FormatChoices.CHOICES)
-    mediapath = models.URLField(max_length=1024)   # cloudinary secure_url
-    public_id = models.CharField(max_length=1024, blank=True, null=True)  # stored Cloudinary public_id
-    is_active = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "announcements"
-        ordering = ("-created_at",)
-
-    def __str__(self):
-        return f"{self.format} - {self.mediapath}"
-
-
-class AnnouncementSeen(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="seen_announcements")
-    announcement = models.ForeignKey(Announcement, on_delete=models.CASCADE, related_name="seen_by")
-    seen_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = "announcement_seen"
-        unique_together = ("user", "announcement")
-        ordering = ("-seen_at",)
-
-    def __str__(self):
-        return f"{self.user} saw {self.announcement.id}"
-
-
-
-
-
 
 import uuid
 from django.db import models
@@ -756,7 +710,6 @@ class HESISpecialChoice(models.Model):
 
 
 
-# models.py (append after existing models)
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -927,7 +880,6 @@ class NewsletterSubscriber(models.Model):
 
 
 
-# api/models.py  — replace the existing Pdf model class with this one
 
 import uuid
 from decimal import Decimal
@@ -1027,3 +979,389 @@ class PdfPurchase(models.Model):
 
     def __str__(self):
         return f"Purchase {self.id} of {self.pdf.name} by {self.buyer_email}"
+
+
+
+
+
+
+
+from django.db import models
+
+class NCLEXExam(models.Model):
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)
+    duration_minutes = models.PositiveIntegerField(default=60)  # default 1 hour
+    created_at = models.DateTimeField(auto_now_add=True)
+    isfree = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.name} ({'completed' if self.is_completed else 'open'})"
+
+
+class NCLEXQuestion(models.Model):
+    FORMAT_CHOICES = [(i, f"Format {i}") for i in range(1, 12)]
+
+    exam = models.ForeignKey(NCLEXExam, related_name="questions", on_delete=models.CASCADE)
+    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)  # 1..8
+    order = models.PositiveIntegerField(default=0)
+
+    # Common fields (use TinyMCE for editing these)
+    question_text = models.TextField(blank=True, null=True)    # used for many formats
+    explanation = models.TextField(blank=True, null=True)
+    paragraph = models.TextField(blank=True, null=True)        # for paragraph-based formats
+    image_url = models.URLField(blank=True, null=True)         # uploaded to cloudinary returned URL
+
+    # For single-blank format (format 2)
+    blank_answer = models.TextField(blank=True, null=True)
+
+    # Headings for format 5 (Heading 1, Heading 2, Heading 3)
+    heading1 = models.CharField(max_length=255, blank=True, null=True)
+    heading2 = models.CharField(max_length=255, blank=True, null=True)
+    heading3 = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"Q{self.id} (Format {self.format}) exam:{self.exam_id} order:{self.order}"
+
+
+class NCLEXChoice(models.Model):
+    """
+    Stores choices per question. The user UI will show Choice 1, Choice 2... and
+    the backend stores each as a separate row (not as an array).
+    """
+    question = models.ForeignKey(NCLEXQuestion, related_name="choices", on_delete=models.CASCADE)
+    label = models.CharField(max_length=8, blank=True, null=True)  # e.g., "A", "B" or "Choice 1"
+    text = models.TextField(blank=True, null=True)
+    is_correct = models.BooleanField(default=False)  # for multi-correct formats
+    # For drag-order questions we record the correct order position (1-based).
+    correct_order = models.PositiveIntegerField(blank=True, null=True)
+    display_order = models.PositiveIntegerField(default=0)  # the order user entered them in UI
+
+    def __str__(self):
+        return f"Choice {self.label or self.id} for Q{self.question_id}"
+
+
+class NCLEXCase(models.Model):
+    """
+    Case heading + case text pair. A case heading must have a case text and is tied to a question.
+    """
+    question = models.ForeignKey(NCLEXQuestion, related_name="cases", on_delete=models.CASCADE)
+    heading = models.CharField(max_length=255)
+    case_text = models.TextField()
+
+    def __str__(self):
+        return f"Case: {self.heading} (Q{self.question_id})"
+
+
+# Add these new model classes somewhere in your api/models.py (after NCLEXCase or near NCLEXChoice)
+class NCLEXAction(models.Model):
+    """
+    Action to Take item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(NCLEXQuestion, related_name="actions", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_nclex_action"
+
+    def __str__(self):
+        return f"Action for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+class NCLEXPotentialCondition(models.Model):
+    """
+    Potential condition item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(NCLEXQuestion, related_name="potentials", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_nclex_potentialcondition"
+
+    def __str__(self):
+        return f"Potential for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+class NCLEXParameter(models.Model):
+    """
+    Parameter to Monitor item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(NCLEXQuestion, related_name="parameters", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_nclex_parameter"
+
+    def __str__(self):
+        return f"Parameter for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+
+
+# Add these imports at top of api/models.py
+from django.conf import settings
+try:
+    # Django 3.1+:
+    from django.db.models import JSONField
+except Exception:
+    # fallback for older versions (Postgres)
+    from django.contrib.postgres.fields import JSONField
+
+# -------------------------
+# New models to add (Nclexrn*)
+# -------------------------
+class NclexrnAttempt(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="nclexrn_attempts")
+    exam = models.ForeignKey(NCLEXExam, on_delete=models.CASCADE, related_name="nclexrn_attempts")
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    grade = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    time_taken_seconds = models.IntegerField(null=True, blank=True)
+    last_question_order = models.IntegerField(default=0)
+    # selected_choices will store the user progress per question
+    # e.g. { "5": {"selected_choices":[1,3]}, "6": {"blanks":{"0":"foo"}} }
+    selected_choices = JSONField(default=dict, blank=True)
+
+    class Meta:
+        unique_together = ("user", "exam")  # one active attempt per user/exam
+        ordering = ("-started_at",)
+
+    def __str__(self):
+        return f"Attempt user:{self.user_id} exam:{self.exam_id} completed:{self.is_completed}"
+
+
+class NclexrnReport(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="nclexrn_reports")
+    exam = models.ForeignKey(NCLEXExam, on_delete=models.CASCADE, related_name="nclexrn_reports")
+    question = models.ForeignKey(NCLEXQuestion, on_delete=models.CASCADE, related_name="nclexrn_reports")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report Q{self.question_id} by {self.user_id}"
+
+
+class NclexrnBookmark(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="nclexrn_bookmarks")
+    exam = models.ForeignKey(NCLEXExam, on_delete=models.CASCADE, related_name="nclexrn_bookmarks")
+    question = models.ForeignKey(NCLEXQuestion, on_delete=models.CASCADE, related_name="nclexrn_bookmarks")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "question")
+
+    def __str__(self):
+        return f"Bookmark Q{self.question_id} user:{self.user_id}"
+
+
+
+
+
+
+
+
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+
+try:
+    # Django 3.1+:
+    from django.db.models import JSONField
+except Exception:
+    # fallback for older versions (Postgres)
+    from django.contrib.postgres.fields import JSONField
+
+
+class PrepExam(models.Model):
+    name = models.CharField(max_length=255)
+    is_completed = models.BooleanField(default=False)
+    duration_minutes = models.PositiveIntegerField(default=60)  # default 1 hour
+    created_at = models.DateTimeField(auto_now_add=True)
+    isfree = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.name} ({'completed' if self.is_completed else 'open'})"
+
+
+class PrepQuestion(models.Model):
+    FORMAT_CHOICES = [(i, f"Format {i}") for i in range(1, 12)]
+
+    exam = models.ForeignKey(PrepExam, related_name="questions", on_delete=models.CASCADE)
+    format = models.PositiveSmallIntegerField(choices=FORMAT_CHOICES)  # 1..11
+    order = models.PositiveIntegerField(default=0)
+
+    # Common fields (use TinyMCE for editing these)
+    question_text = models.TextField(blank=True, null=True)    # used for many formats
+    explanation = models.TextField(blank=True, null=True)
+    paragraph = models.TextField(blank=True, null=True)        # for paragraph-based formats
+    image_url = models.URLField(blank=True, null=True)         # uploaded to cloudinary returned URL
+
+    # For single-blank format (format 2)
+    blank_answer = models.TextField(blank=True, null=True)
+
+    # Headings for format 5 (Heading 1, Heading 2, Heading 3)
+    heading1 = models.CharField(max_length=255, blank=True, null=True)
+    heading2 = models.CharField(max_length=255, blank=True, null=True)
+    heading3 = models.CharField(max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"Q{self.id} (Format {self.format}) exam:{self.exam_id} order:{self.order}"
+
+
+class PrepChoice(models.Model):
+    """
+    Stores choices per question. The user UI will show Choice 1, Choice 2... and
+    the backend stores each as a separate row (not as an array).
+    """
+    question = models.ForeignKey(PrepQuestion, related_name="choices", on_delete=models.CASCADE)
+    label = models.CharField(max_length=8, blank=True, null=True)  # e.g., "A", "B" or "Choice 1"
+    text = models.TextField(blank=True, null=True)
+    is_correct = models.BooleanField(default=False)  # for multi-correct formats
+    # For drag-order questions we record the correct order position (1-based).
+    correct_order = models.PositiveIntegerField(blank=True, null=True)
+    display_order = models.PositiveIntegerField(default=0)  # the order user entered them in UI
+
+    def __str__(self):
+        return f"Choice {self.label or self.id} for Q{self.question_id}"
+
+
+class PrepCase(models.Model):
+    """
+    Case heading + case text pair. A case heading must have a case text and is tied to a question.
+    """
+    question = models.ForeignKey(PrepQuestion, related_name="cases", on_delete=models.CASCADE)
+    heading = models.CharField(max_length=255)
+    case_text = models.TextField()
+
+    def __str__(self):
+        return f"Case: {self.heading} (Q{self.question_id})"
+
+
+# New models for format 9 lists (Actions / Potentials / Parameters)
+class PrepAction(models.Model):
+    """
+    Action to Take item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(PrepQuestion, related_name="actions", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_prep_action"
+
+    def __str__(self):
+        return f"Action for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+class PrepPotentialCondition(models.Model):
+    """
+    Potential condition item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(PrepQuestion, related_name="potentials", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_prep_potentialcondition"
+
+    def __str__(self):
+        return f"Potential for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+class PrepParameter(models.Model):
+    """
+    Parameter to Monitor item for a question (Format 9).
+    Multiple can be marked is_correct=True.
+    """
+    question = models.ForeignKey(PrepQuestion, related_name="parameters", on_delete=models.CASCADE)
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', 'id']
+        db_table = "api_prep_parameter"
+
+    def __str__(self):
+        return f"Parameter for Q{self.question_id} ({'correct' if self.is_correct else 'incorrect'})"
+
+
+# -------------------------
+# New models to add (attempts/reports/bookmarks)
+# -------------------------
+class PrepAttempt(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="prep_attempts")
+    exam = models.ForeignKey(PrepExam, on_delete=models.CASCADE, related_name="prep_attempts")
+    started_at = models.DateTimeField(default=timezone.now)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    is_completed = models.BooleanField(default=False)
+    grade = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    time_taken_seconds = models.IntegerField(null=True, blank=True)
+    last_question_order = models.IntegerField(default=0)
+    # selected_choices will store the user progress per question
+    # e.g. { "5": {"selected_choices":[1,3]}, "6": {"blanks":{"0":"foo"}} }
+    selected_choices = JSONField(default=dict, blank=True)
+
+    class Meta:
+        unique_together = ("user", "exam")  # one active attempt per user/exam
+        ordering = ("-started_at",)
+
+    def __str__(self):
+        return f"Attempt user:{self.user_id} exam:{self.exam_id} completed:{self.is_completed}"
+
+
+class PrepReport(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="prep_reports")
+    exam = models.ForeignKey(PrepExam, on_delete=models.CASCADE, related_name="prep_reports")
+    question = models.ForeignKey(PrepQuestion, on_delete=models.CASCADE, related_name="prep_reports")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Report Q{self.question_id} by {self.user_id}"
+
+
+class PrepBookmark(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="prep_bookmarks")
+    exam = models.ForeignKey(PrepExam, on_delete=models.CASCADE, related_name="prep_bookmarks")
+    question = models.ForeignKey(PrepQuestion, on_delete=models.CASCADE, related_name="prep_bookmarks")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "question")
+
+    def __str__(self):
+        return f"Bookmark Q{self.question_id} user:{self.user_id}"
+
+
+
+
