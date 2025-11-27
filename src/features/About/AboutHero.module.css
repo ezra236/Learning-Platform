@@ -1,8 +1,8 @@
 .hero {
   background: #00357b;
   color: white;
-  padding: 100px 0;
-  min-height: 90vh;
+  padding: 80px 0;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   position: relative;
@@ -19,8 +19,8 @@
 
 .heroContent {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 3rem;
   align-items: center;
 }
 
@@ -28,42 +28,38 @@
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .logo {
-  width: 70px;
-  height: 70px;
-  border-radius: 16px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  padding: 6px;
   background: white;
-  padding: 8px;
 }
 
 .title {
-  font-size: 3.2rem;
+  font-size: 2.5rem;
   font-weight: 400;
   margin: 0;
-  line-height: 1.1;
-  background: linear-gradient(135deg, #ffffff 0%, #e8eaf6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  line-height: 1.2;
+  color: goldenrod;
 }
 
 .subtitle {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 400;
-  line-height: 1.7;
-  margin-bottom: 3rem;
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
   opacity: 0.95;
   max-width: 90%;
 }
 
 .stats {
   display: flex;
-  gap: 3rem;
-  margin-bottom: 3rem;
+  gap: 2.5rem;
+  margin-bottom: 2.5rem;
 }
 
 .statItem {
@@ -75,18 +71,18 @@
 .statItem:not(:last-child)::after {
   content: '';
   position: absolute;
-  right: -1.5rem;
+  right: -1.25rem;
   top: 50%;
   transform: translateY(-50%);
   width: 1px;
-  height: 40px;
+  height: 35px;
   background: linear-gradient(180deg, transparent, rgba(255,255,255,0.5), transparent);
 }
 
 .statNumber {
-  font-size: 2.4rem;
+  font-size: 2rem;
   font-weight: 400;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -94,7 +90,7 @@
 }
 
 .statLabel {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   opacity: 0.9;
   font-weight: 400;
 }
@@ -104,48 +100,40 @@
   gap: 1.5rem;
 }
 
-.primaryBtn, .secondaryBtn {
-  padding: 16px 32px;
+.primaryBtn {
+  padding: 14px 28px;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: 10px;
+  font-size: 1rem;
   font-weight: 400;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-}
-
-.primaryBtn {
-  background: rgb(68, 6, 126);
+  background: rgb(178, 10, 94);
   color: white;
 }
 
 .primaryBtn:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   background: #60007b;
 }
 
-.secondaryBtn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
-}
-
-.secondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.5);
+.primaryBtn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .imageContent {
   position: relative;
-  border-radius: 24px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
-  transform: perspective(1000px) rotateY(-8deg) rotateX(5deg);
-  transition: transform 0.6s ease;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  transform: perspective(1000px) rotateY(-5deg) rotateX(3deg);
+  transition: transform 0.5s ease;
+  max-width: 450px;
+  margin-left: auto;
 }
 
 .imageContent:hover {
@@ -154,34 +142,34 @@
 
 .heroImage {
   width: 100%;
-  height: 550px;
+  height: 400px;
   object-fit: cover;
   display: block;
-  transition: transform 0.6s ease;
+  transition: transform 0.5s ease;
 }
 
 .imageContent:hover .heroImage {
-  transform: scale(1.08);
+  transform: scale(1.05);
 }
 
 .floatingBadges {
   position: absolute;
-  bottom: 20px;
-  left: 20px;
+  bottom: 15px;
+  left: 15px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
 .badge {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px);
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-radius: 50px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
+  gap: 0.6rem;
+  font-size: 0.85rem;
   font-weight: 400;
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: float 3s ease-in-out infinite;
@@ -192,18 +180,18 @@
 }
 
 .badgeIcon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(50px);
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
@@ -222,7 +210,7 @@
 @media (max-width: 968px) {
   .heroContent {
     grid-template-columns: 1fr;
-    gap: 3rem;
+    gap: 2.5rem;
     text-align: center;
   }
   
@@ -231,12 +219,12 @@
   }
   
   .title {
-    font-size: 2.8rem;
+    font-size: 2.2rem;
   }
   
   .subtitle {
     max-width: 100%;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
   
   .stats {
@@ -246,7 +234,7 @@
   
   .imageContent {
     transform: none;
-    max-width: 500px;
+    max-width: 400px;
     margin: 0 auto;
   }
   
@@ -257,22 +245,22 @@
 
 @media (max-width: 768px) {
   .hero {
-    padding: 80px 0;
+    padding: 60px 0;
     min-height: auto;
   }
   
   .title {
-    font-size: 2.3rem;
+    font-size: 2rem;
   }
   
   .stats {
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     align-items: center;
   }
   
   .heroImage {
-    height: 400px;
+    height: 350px;
   }
   
   .ctaButtons {
@@ -280,8 +268,44 @@
     align-items: center;
   }
   
-  .primaryBtn, .secondaryBtn {
+  .primaryBtn {
     width: 100%;
-    max-width: 280px;
+    max-width: 260px;
+  }
+  
+  .logoSection {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .logo {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 50px 0;
+  }
+  
+  .title {
+    font-size: 1.8rem;
+  }
+  
+  .subtitle {
+    font-size: 1rem;
+  }
+  
+  .heroImage {
+    height: 300px;
+  }
+  
+  .stats {
+    gap: 1rem;
+  }
+  
+  .statNumber {
+    font-size: 1.7rem;
   }
 }

@@ -18,7 +18,6 @@ export default function InsightsHeader({
     { icon: "✨", label: "Total Views", value: totalViews.toLocaleString() },
     { icon: "🟢", label: "Active Items", value: activeCount },
     { icon: "🎯", label: "Campaigns", value: campaignsCount },
-    { icon: "📢", label: "Announcements", value: announcementsCount },
   ];
 
   return (

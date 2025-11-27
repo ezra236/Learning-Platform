@@ -72,10 +72,6 @@ const formatConfig = {
   4: { question: true, paragraph: true,  image: false, table: false, choices: true, specialChoices: false, specialOrder: false, explanation: true },
   5: { question: true, paragraph: false, image: false, table: true,  choices: true, specialChoices: false, specialOrder: false, explanation: true },
   6: { question: false,paragraph: true,  image: false, table: true,  choices: true, specialChoices: false, specialOrder: false, explanation: true },
-  7: { question: true, paragraph: true,  image: false, table: false, choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
-  8: { question: true, paragraph: false, image: false, table: true,  choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
-  9: { question: false,paragraph: true,  image: false, table: true,  choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
-  10: { question: true, paragraph: false, image: false, table: false, choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
 };
 
 const formatDescriptions = {
@@ -85,10 +81,6 @@ const formatDescriptions = {
   4: "📝 Paragraph + ❓ Question + ☑️ Choices + 💡 Explanation + ✅ Correct Answer",
   5: "❓ Question + 📊 Table + ☑️ Choices + 💡 Explanation + ✅ Correct Answer",
   6: "📝 Paragraph + 📊 Table + ☑️ Choices + 💡 Explanation + ✅ Correct Answer",
-  7: "📝 Paragraph + ❓ Question + 🔀 Special Choices + 💡 Explanation + 🔢 Correct Order",
-  8: "❓ Question + 📊 Table + 🔀 Special Choices + 💡 Explanation + 🔢 Correct Order", 
-  9: "📝 Paragraph + 📊 Table + 🔀 Special Choices + 💡 Explanation + 🔢 Correct Order",
-  10: "❓ Question + 🔀 Special Choices + 💡 Explanation + 🔢 Correct Order"
 };
 
 export default function QuestionUploader() {
@@ -854,7 +846,7 @@ export default function QuestionUploader() {
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
+                  {Array.from({ length: 6 }, (_, i) => i + 1).map(n => (
                     <option 
                       key={n} 
                       value={n}

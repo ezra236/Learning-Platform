@@ -45,7 +45,7 @@
 
 /* Logo Styles */
 .logoText {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 400;
   background: rgb(189, 162, 8);
   -webkit-background-clip: text;
@@ -266,7 +266,7 @@
   top: 0;
   right: 0;
   width: 85%;
-  max-width: 300px;
+  max-width: 320px;
   height: 100%;
   background: #00357b;
   transform: translateX(100%);
@@ -286,15 +286,16 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0.75rem;
   color: #fff;
   transition: all 0.3s ease;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.2rem;
 }
 
 .closeButton:hover {
@@ -308,17 +309,17 @@
   margin-top: 3rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: center;
 }
 
 .mobileNavButton {
-  padding: 1rem;
+  padding: 1.2rem;
   width: 100%;
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.3rem;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
@@ -332,6 +333,7 @@
 /* Mobile Dropdown Styles */
 .mobileDropdown {
   width: 100%;
+  position: relative;
 }
 
 .mobileDropdownToggle {
@@ -339,6 +341,7 @@
   color: white;
   border: 2px solid rgb(171, 147, 8);
   font-weight: 400;
+  font-size: 1.3rem;
 }
 
 .mobileDropdownContent {
@@ -351,11 +354,11 @@
 
 .mobileDropdownItem {
   display: block;
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.2rem;
   color: blue;
   text-decoration: none;
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   transition: all 0.3s ease;
   border: none;
   background: none;
@@ -464,6 +467,16 @@
   .logoText {
     font-size: 1.25rem;
   }
+
+  .mobileNavButton {
+    font-size: 1.2rem;
+    padding: 1.1rem;
+  }
+
+  .mobileDropdownItem {
+    font-size: 1rem;
+    padding: 0.9rem 1.1rem;
+  }
 }
 
 /* Animation for menu items */
@@ -490,3 +503,5 @@
 .mobileNavButtons > *:nth-child(6) { animation-delay: 0.6s; }
 .mobileNavButtons > *:nth-child(7) { animation-delay: 0.7s; }
 .mobileNavButtons > *:nth-child(8) { animation-delay: 0.8s; }
+.mobileNavButtons > *:nth-child(9) { animation-delay: 0.9s; }
+.mobileNavButtons > *:nth-child(10) { animation-delay: 1.0s; }

@@ -2,7 +2,7 @@ import React from 'react';
 import styles from '../styles/whatsapp.module.css';
 
 const WhatsApp = () => {
-  const phoneNumber = '1234567890'; // Replace with your number
+  const phoneNumber = '+16019093152'; // Replace with your number
   const defaultMessage = 'Hi, I need help with...'; // Replace with your default message
 
   const encodedMessage = encodeURIComponent(defaultMessage);

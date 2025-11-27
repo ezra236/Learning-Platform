@@ -9,7 +9,6 @@ import UserActionsLinks from './UserActionsLinks';
 import SubscriptionsStat from './SubscriptionsStat';
 import VerifiedUsersStat from './VerifiedUsersStat';
 import CreateCampaignLink from './CreateCampaignLink';
-import CreateAnnouncementLink from './CreateAnnouncementLink';
 import AdInsights from './AdInsights';
 import styles from './DashboardPage.module.css';
 
@@ -38,7 +37,6 @@ export default function DashboardPage() {
         <div className={styles.gridColumn}>
           <UserActionsLinks />
           <CreateCampaignLink />
-          <CreateAnnouncementLink />
           <AdInsights />
         </div>
       </div>

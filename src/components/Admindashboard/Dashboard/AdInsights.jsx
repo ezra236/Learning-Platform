@@ -14,7 +14,7 @@ export default function AdInsights() {
         </div>
         
         <div className={styles.textSection}>
-          <h3 className={styles.title}>See Announcement and Campaign Insights</h3>
+          <h3 className={styles.title}>See Campaign Insights</h3>
           <p className={styles.description}>
             See views and capaigns perfomance
           </p>

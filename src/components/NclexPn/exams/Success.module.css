@@ -1,0 +1,75 @@
+.successBox {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+  transform: translateX(400px);
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.successBox.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.successBox.hide {
+  transform: translateX(400px);
+  opacity: 0;
+}
+
+.successIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.successText {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .successBox {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+    transform: translateY(-100px);
+  }
+
+  .successBox.show {
+    transform: translateY(0);
+  }
+
+  .successBox.hide {
+    transform: translateY(-100px);
+  }
+}
+
+@media (max-width: 480px) {
+  .successBox {
+    padding: 14px 16px;
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  
+  .successIcon {
+    font-size: 18px;
+  }
+  
+  .successText {
+    font-size: 13px;
+  }
+}

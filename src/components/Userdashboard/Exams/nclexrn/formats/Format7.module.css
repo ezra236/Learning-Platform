@@ -1,0 +1,243 @@
+/* Format7.module.css — left/right layout, font-weight 400, no Tailwind */
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+  font-weight: 400;
+  flex-wrap: wrap;
+}
+
+/* Left panel: paragraph + cases */
+.leftPanel {
+  flex: 1 1 360px;
+  min-width: 320px;
+  background: #ffffff;
+  border: 1px solid #e6eef8;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.leftPanel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(16,24,40,0.06);
+}
+
+.paragraph {
+  margin-bottom: 12px;
+  line-height: 1.6;
+  font-size: 15px;
+  color: #374151;
+}
+
+/* Case nav row */
+.caseNavigation {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.caseButton {
+  background: #faf8fc;
+  border: 1px solid #e6eef8;
+  color: black;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.caseButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(59,130,246,0.08);
+}
+
+.caseButton.active {
+  background: #0755b5;
+}
+
+/* Case content */
+.caseContent {
+  padding: 12px;
+  background: #fbfdff;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  min-height: 80px;
+  color: #374151;
+  line-height: 1.6;
+  font-size: 14.5px;
+}
+
+.noCaseText {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  padding: 14px 8px;
+}
+
+/* Right panel: question + dropdowns + reveal */
+.rightPanel {
+  flex: 1 1 520px;
+  min-width: 320px;
+  background: #ffffff;
+  border: 1px solid #eef2ff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.03);
+}
+
+/* Keep original HTML flow intact */
+.questionContainer {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 14px;
+  color: #111827;
+}
+
+/* Placeholder spans inserted into original HTML */
+.__dropdown_placeholder {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 6px;
+  min-width: 140px;
+}
+
+/* select styling */
+.select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+  font-size: 15px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(2,6,23,0.03);
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+  min-width: 140px;
+  font-weight: 400;
+  color: black;
+}
+
+.select:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(59,130,246,0.08);
+}
+
+.select:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 4px rgba(96,165,250,0.08);
+}
+
+/* reveal button */
+.revealButton {
+  background: linear-gradient(135deg,#06b6d4,#7c3aed);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 400;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+
+.revealButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(124,58,237,0.18);
+}
+
+/* Answer section */
+.answerSection {
+  margin-top: 16px;
+  background: #fbfdff;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #eef2ff;
+  animation: slideDown 0.25s ease;
+}
+
+.answerTitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: #059669;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* dropdown mapped answers */
+.dropdownAnswerList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dropdownAnswer {
+  background: #ffffff;
+  border: 1px solid #eef7f1;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.dropdownAnswerTitle {
+  min-width: 110px;
+  color: #065f46;
+  font-weight: 400;
+}
+
+.dropdownAnswerContent {
+  color: #374151;
+  line-height: 1.5;
+  font-size: 14.5px;
+}
+
+/* explanation */
+.explanationTitle {
+  color: #1e40af;
+  font-weight: 400;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.explanationText {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #eef2ff;
+  color: #374151;
+  line-height: 1.6;
+  font-size: 14.5px;
+}
+
+/* small screens: stacked */
+@media (max-width: 920px) {
+  .container {
+    flex-direction: column;
+  }
+  .leftPanel, .rightPanel {
+    min-width: auto;
+  }
+  .__dropdown_placeholder {
+    min-width: 120px;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

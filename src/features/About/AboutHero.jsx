@@ -12,7 +12,7 @@ const AboutHero = () => {
     setLoading(true);
     setTimeout(() => {
       router.push('/user/signup/');
-    }, 1000); // optional short delay for UX
+    }, 1000);
   };
 
   return (

@@ -1,4 +1,3 @@
-// components/Main.jsx
 import React, { useEffect, useState } from "react";
 import styles from "./Main.module.css";
 
@@ -118,7 +117,7 @@ function LeftPane() {
     }
   }
 
-  const typeIcon = type === "ati" ? "📚" : "🩺";
+  const typeIcon = type === "ati" ? "📚" : type === "hesi" ? "🩺" : "🧪";
   const filteredExams = exams.filter(exam => 
     exam.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -160,6 +159,7 @@ function LeftPane() {
             >
               <option value="ati">📚 ATI Exams</option>
               <option value="hesi">🩺 HESI Exams</option>
+              <option value="nclex">🧪 Nclex-Rn Exams</option>
             </select>
           </label>
           <label className={styles.label}>
@@ -228,7 +228,7 @@ function LeftPane() {
                           </span>
                         )}
                         <span className={styles.examType}>
-                          {type === "ati" ? "ATI" : "HESI"}
+                          {type === "ati" ? "ATI" : type === "hesi" ? "HESI" : "Nclex-Rn"}
                         </span>
                       </div>
                       <div className={styles.examId}>ID: {exam.id}</div>
@@ -302,7 +302,7 @@ function RightPane() {
         const text = await res.text();
         throw new Error(text || "Set free failed");
       }
-      const updated = await res.json();
+      await res.json();
       setExams((prev) => prev.map((e) => (e.id === id ? { ...e, isfree: true } : e)));
     } catch (err) {
       console.error("Allow free error:", err);
@@ -310,7 +310,7 @@ function RightPane() {
     }
   }
 
-  const typeIcon = type === "ati" ? "📚" : "🩺";
+  const typeIcon = type === "ati" ? "📚" : type === "hesi" ? "🩺" : "🧪";
   const freeExamsCount = exams.filter(exam => exam.isfree).length;
   const filteredExams = exams.filter(exam => 
     exam.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -336,7 +336,9 @@ function RightPane() {
             <span className={styles.statLabel}>Total Exams</span>
           </div>
           <div className={styles.statItem}>
-            <span className={styles.statNumber}>{Math.round((freeExamsCount / exams.length) * 100) || 0}%</span>
+            <span className={styles.statNumber}>
+              {exams.length ? `${Math.round((freeExamsCount / exams.length) * 100)}%` : "0%"}
+            </span>
             <span className={styles.statLabel}>Free Ratio</span>
           </div>
         </div>
@@ -357,6 +359,7 @@ function RightPane() {
             >
               <option value="ati">📚 ATI Exams</option>
               <option value="hesi">🩺 HESI Exams</option>
+              <option value="nclex">🧪 Nclex-Rn Exams</option>
             </select>
           </label>
           <label className={styles.label}>
@@ -430,7 +433,7 @@ function RightPane() {
                           </span>
                         )}
                         <span className={styles.examType}>
-                          {type === "ati" ? "ATI" : "HESI"}
+                          {type === "ati" ? "ATI" : type === "hesi" ? "HESI" : "Nclex-Rn"}
                         </span>
                       </div>
                       <div className={styles.examId}>ID: {exam.id}</div>

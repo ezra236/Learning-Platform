@@ -1,17 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styles from './TestimonialCarousel.module.css';
 import Modal from '../Modal/Modal';
 
 const TestimonialCarousel = () => {
   const [testimonials, setTestimonials] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedEvidence, setSelectedEvidence] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [touchStartX, setTouchStartX] = useState(null);
-  const carouselRef = useRef(null);
-  const timeoutRef = useRef(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  
+  const scrollContainerRef = useRef(null);
 
   // API base from env
   const API_BASE_RAW = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_API_BASE_URL : undefined;
@@ -33,87 +31,64 @@ const TestimonialCarousel = () => {
     fetchTestimonials();
   }, [PUBLIC_EVIDENCES_ENDPOINT]);
 
-  // Auto-advance functionality
-  useEffect(() => {
-    if (isPaused || testimonials.length === 0 || isTransitioning) return;
-
-    timeoutRef.current = setTimeout(() => {
-      handleNext();
-    }, 5000);
-
-    return () => clearTimeout(timeoutRef.current);
-  }, [currentIndex, isPaused, testimonials.length, isTransitioning]);
-
-  const handleNext = useCallback(() => {
-    if (testimonials.length === 0 || isTransitioning) return;
-    
-    setIsTransitioning(true);
-    setCurrentIndex(prev => (prev + 1) % testimonials.length);
-    
-    setTimeout(() => setIsTransitioning(false), 700);
-  }, [testimonials.length, isTransitioning]);
-
-  const handlePrev = useCallback(() => {
-    if (testimonials.length === 0 || isTransitioning) return;
-    
-    setIsTransitioning(true);
-    setCurrentIndex(prev => prev === 0 ? testimonials.length - 1 : prev - 1);
-    
-    setTimeout(() => setIsTransitioning(false), 700);
-  }, [testimonials.length, isTransitioning]);
-
-  const togglePause = () => {
-    setIsPaused(prev => !prev);
+  // Check scroll position to enable/disable nav buttons
+  const updateScrollButtons = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const hasScroll = container.scrollWidth > container.clientWidth;
+      setCanScrollLeft(container.scrollLeft > 10);
+      setCanScrollRight(
+        hasScroll && 
+        container.scrollLeft < container.scrollWidth - container.clientWidth - 10
+      );
+    }
   };
 
-  const handleThumbnailClick = (index) => {
-    if (isTransitioning) return;
-    setCurrentIndex(index);
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', updateScrollButtons);
+      window.addEventListener('resize', updateScrollButtons);
+      updateScrollButtons();
+    }
+    
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', updateScrollButtons);
+      }
+      window.removeEventListener('resize', updateScrollButtons);
+    };
+  }, [testimonials]);
+
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: -350,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 350,
+        behavior: 'smooth'
+      });
+    }
   };
 
   const handleViewCase = (evidenceUrl) => {
-    setSelectedEvidence(evidenceUrl);
-    setShowModal(true);
+    if (evidenceUrl) {
+      setSelectedEvidence(evidenceUrl);
+      setShowModal(true);
+    }
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedEvidence(null);
   };
-
-  // Touch handlers for mobile swipe
-  const handleTouchStart = (e) => {
-    setTouchStartX(e.touches[0].clientX);
-  };
-
-  const handleTouchEnd = (e) => {
-    if (!touchStartX) return;
-
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX - touchEndX;
-
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        handleNext();
-      } else {
-        handlePrev();
-      }
-    }
-
-    setTouchStartX(null);
-  };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') handlePrev();
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === ' ' || e.key === 'Space') togglePause();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrev]);
 
   if (testimonials.length === 0) {
     return (
@@ -124,184 +99,148 @@ const TestimonialCarousel = () => {
     );
   }
 
-  // Get visible items: previous, current, next for thumbnails
-  const getVisibleThumbnails = () => {
-    const thumbnails = [];
-    for (let i = 1; i <= 3; i++) {
-      const index = (currentIndex + i) % testimonials.length;
-      thumbnails.push(testimonials[index]);
-    }
-    return thumbnails;
-  };
-
-  const currentTestimonial = testimonials[currentIndex];
-  const visibleThumbnails = getVisibleThumbnails();
-
   return (
     <>
-      <section 
-        ref={carouselRef}
-        className={styles.carousel}
-        role="region"
-        aria-roledescription="testimonial carousel"
-        aria-label="Customer testimonials"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => !isPaused && setIsPaused(false)}
-      >
-        {/* Background Decorative Elements */}
-        <div className={styles.backgroundOrnament}></div>
-        <div className={styles.floatingShape1}></div>
-        <div className={styles.floatingShape2}></div>
-
-        {/* Pause/Play Control */}
-        <button
-          className={styles.pausePlay}
-          onClick={togglePause}
-          aria-label={isPaused ? 'Play carousel' : 'Pause carousel'}
-        >
-          <i className={`fas ${isPaused ? 'fa-play' : 'fa-pause'}`}></i>
-        </button>
-
-        <div className={styles.carouselContent}>
-          {/* Thumbnails Column */}
-          <div className={styles.thumbnailsColumn}>
-            <div className={styles.thumbnailsHeader}>
-              <i className="fas fa-users"></i>
-              <span>Testimonials</span>
-            </div>
-            {visibleThumbnails.map((testimonial, index) => (
-              <div
-                key={testimonial.id}
-                className={`${styles.thumbnail} ${index === 0 ? styles.nextInLine : ''}`}
-                onClick={() => handleThumbnailClick((currentIndex + index + 1) % testimonials.length)}
-              >
-                <div className={styles.thumbnailContent}>
-                  <div className={styles.thumbnailBadge}>
-                    <i className="fas fa-quote-left"></i>
-                  </div>
-                  <div className={styles.thumbnailText}>
-                    <h4 className={styles.thumbnailHeading}>{testimonial.heading}</h4>
-                    <p className={styles.thumbnailDescription}>
-                      {testimonial.description.length > 80 
-                        ? `${testimonial.description.substring(0, 80)}...`
-                        : testimonial.description
-                      }
-                    </p>
-                    <div className={styles.thumbnailFooter}>
-                      <div className={styles.stars}>
-                        {[...Array(5)].map((_, i) => (
-                          <i key={i} className="fas fa-star"></i>
-                        ))}
-                      </div>
-                      <span className={styles.thumbnailRole}>{testimonial.role}</span>
-                    </div>
-                  </div>
-                  {testimonial.profile_url && (
-                    <div className={styles.thumbnailImageContainer}>
-                      <img
-                        src={testimonial.profile_url}
-                        alt=""
-                        className={styles.thumbnailAvatar}
-                      />
-                      <div className={styles.thumbnailOverlay}>
-                        <i className="fas fa-eye"></i>
-                      </div>
-                    </div>
-                  )}
+      <section className={styles.container}>
+        {/* Background Elements */}
+        <div className={styles.backgroundGradient}></div>
+        <div className={styles.floatingOrb1}></div>
+        <div className={styles.floatingOrb2}></div>
+        
+        <div className={styles.contentWrapper}>
+          {/* Header Section */}
+          <div className={styles.header}>
+            <div className={styles.headerContent}>
+              <div className={styles.titleSection}>
+                <div className={styles.titleBadge}>
+                  <span className={styles.badgeIcon}>✨</span>
+                  Trusted by Many
                 </div>
+                <h2 className={styles.title}>Real Stories, Real Results</h2>
+                <p className={styles.subtitle}>
+                  Discover what our clients have to say about their experience
+                </p>
               </div>
-            ))}
-          </div>
-
-          {/* Focused Testimonial */}
-          <div className={styles.focusedPanel}>
-            <div className={styles.focusedCard}>
-              <div className={styles.focusedContent}>
-                <div className={styles.quoteContainer}>
-                  <i className="fas fa-quote-left"></i>
-                </div>
-                
-                <div className={styles.testimonialHeader}>
-                  <h2 className={styles.focusedHeading}>{currentTestimonial.heading}</h2>
-                  <div className={styles.verifiedBadge}>
-                    <i className="fas fa-check-circle"></i>
-                    Verified User
-                  </div>
-                </div>
-                
-                <p className={styles.focusedDescription}>{currentTestimonial.description}</p>
-                
-                <div className={styles.ratingContainer}>
-                  <div className={styles.stars}>
-                    {[...Array(5)].map((_, i) => (
-                      <i key={i} className="fas fa-star"></i>
-                    ))}
-                  </div>
-                  <div className={styles.ratingInfo}>
-                    <span className={styles.role}>{currentTestimonial.role}</span>
-                    <div className={styles.ratingDivider}></div>
-                    <span className={styles.ratingText}>5.0 Rating</span>
-                  </div>
-                </div>
-
-                <button 
-                  className={styles.ctaButton}
-                  onClick={() => handleViewCase(currentTestimonial.evidence_url)}
+              
+              <div className={styles.controls}>
+                <button
+                  className={`${styles.navButton} ${!canScrollLeft ? styles.disabled : ''}`}
+                  onClick={scrollLeft}
+                  disabled={!canScrollLeft}
+                  aria-label="Scroll left"
                 >
-                  <i className="fas fa-external-link-alt"></i>
-                  Evidence
+                  <span className={styles.navIcon}>←</span>
+                </button>
+                <button
+                  className={`${styles.navButton} ${!canScrollRight ? styles.disabled : ''}`}
+                  onClick={scrollRight}
+                  disabled={!canScrollRight}
+                  aria-label="Scroll right"
+                >
+                  <span className={styles.navIcon}>→</span>
                 </button>
               </div>
-
-              {currentTestimonial.profile_url && (
-                <div className={styles.portraitContainer}>
-                  <div className={styles.portraitFrame}>
-                    <img
-                      src={currentTestimonial.profile_url}
-                      alt={`Portrait of ${currentTestimonial.role}`}
-                      className={styles.portrait}
-                    />
-                    <div className={styles.portraitGlow}></div>
-                  </div>
-                  <div className={styles.portraitDecoration}>
-                    <i className="fas fa-award"></i>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-        </div>
 
-        {/* Navigation Dots */}
-        <div className={styles.navigationDots}>
-          {testimonials.slice(0, 5).map((_, index) => (
-            <button
-              key={index}
-              className={`${styles.dot} ${index === currentIndex % 5 ? styles.activeDot : ''}`}
-              onClick={() => setCurrentIndex(index)}
-              aria-label={`Go to testimonial ${index + 1}`}
-            />
-          ))}
-        </div>
+          {/* Scroll Container */}
+          <div className={styles.scrollArea}>
+            <div 
+              ref={scrollContainerRef}
+              className={styles.scrollContainer}
+              onScroll={updateScrollButtons}
+            >
+              <div className={styles.cardsContainer}>
+                {testimonials.map((testimonial, index) => (
+                  <article key={testimonial.id} className={styles.testimonialCard}>
+                    {/* Card Glow Effect */}
+                    <div className={styles.cardGlow}></div>
+                    
+                    {/* Profile Header */}
+                    <header className={styles.cardHeader}>
+                      <div className={styles.profile}>
+                        <div className={styles.avatarWrapper}>
+                          {testimonial.profile_url ? (
+                            <img
+                              src={testimonial.profile_url}
+                              alt=""
+                              className={styles.avatar}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className={styles.avatarPlaceholder}>👤</div>
+                          )}
+                          <div className={styles.verifiedMark}>✓</div>
+                        </div>
+                        <div className={styles.profileText}>
+                          <h3 className={styles.cardHeading}>{testimonial.heading}</h3>
+                          <span className={styles.role}>{testimonial.role}</span>
+                        </div>
+                      </div>
+                      <div className={styles.rating}>
+                        <span className={styles.stars}>★★★★★</span>
+                        <span className={styles.ratingScore}>5.0</span>
+                      </div>
+                    </header>
 
-        {/* Mobile Navigation */}
-        <div className={styles.mobileNav}>
-          <button 
-            className={styles.navButton}
-            onClick={handlePrev}
-            aria-label="Previous testimonial"
-          >
-            <i className="fas fa-chevron-left"></i>
-          </button>
-          <button 
-            className={styles.navButton}
-            onClick={handleNext}
-            aria-label="Next testimonial"
-          >
-            <i className="fas fa-chevron-right"></i>
-          </button>
+                    {/* Testimonial Content */}
+                    <div className={styles.cardBody}>
+                      <div className={styles.quoteSection}>
+                        <span className={styles.quoteIcon}>❝</span>
+                        <p className={styles.testimonialText}>{testimonial.description}</p>
+                      </div>
+                    </div>
+
+                    {/* Evidence & Actions */}
+                    <footer className={styles.cardFooter}>
+                      <button 
+                        className={`${styles.evidenceButton} ${!testimonial.evidence_url ? styles.disabled : ''}`}
+                        onClick={() => handleViewCase(testimonial.evidence_url)}
+                        disabled={!testimonial.evidence_url}
+                      >
+                        <span className={styles.buttonIcon}>📸</span>
+                        View Evidence
+                        {testimonial.evidence_url && (
+                          <span className={styles.buttonBadge}>New</span>
+                        )}
+                      </button>
+                      
+                      <div className={styles.meta}>
+                        <span className={styles.date}>
+                          🗓️ {new Date(testimonial.created_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    </footer>
+
+                    {/* Decorative Elements */}
+                    <div className={styles.cardCorner}></div>
+                    <div className={styles.cardPattern}></div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Scroll Indicator */}
+          <div className={styles.scrollIndicator}>
+            <div className={styles.scrollTrack}>
+              <div 
+                className={styles.scrollThumb}
+                style={{
+                  width: scrollContainerRef.current 
+                    ? `${(scrollContainerRef.current.clientWidth / scrollContainerRef.current.scrollWidth) * 100}%`
+                    : '0%',
+                  left: scrollContainerRef.current 
+                    ? `${(scrollContainerRef.current.scrollLeft / (scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth)) * (100 - (scrollContainerRef.current.clientWidth / scrollContainerRef.current.scrollWidth) * 100)}%`
+                    : '0%'
+                }}
+              ></div>
+            </div>
+          </div>
         </div>
       </section>
 

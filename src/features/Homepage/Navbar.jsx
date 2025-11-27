@@ -11,6 +11,7 @@ export default function Navbar() {
   const closeBtnRef = useRef(null);
   const firstMenuItemRef = useRef(null);
   const dropdownRef = useRef(null);
+  const mobileDropdownRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 50);
@@ -33,6 +34,7 @@ export default function Navbar() {
     const onKey = (e) => {
       if (e.key === "Escape" && isMenuOpen) {
         setIsMenuOpen(false);
+        setActiveDropdown(null);
       }
     };
     window.addEventListener("keydown", onKey);
@@ -42,22 +44,40 @@ export default function Navbar() {
     };
   }, [isMenuOpen]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - Desktop + Mobile-safe
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setActiveDropdown(null);
+      const target = event.target;
+
+      // If click is inside the desktop nav (dropdownRef), do nothing
+      if (dropdownRef.current && dropdownRef.current.contains(target)) {
+        return;
       }
+
+      // If click is inside the mobile menu content, do nothing (prevents immediate close on mobile)
+      if (mobileDropdownRef.current && mobileDropdownRef.current.contains(target)) {
+        return;
+      }
+
+      // Otherwise close any open dropdown
+      setActiveDropdown(null);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isMenuOpen]);
 
-  const toggleMenu = () => setIsMenuOpen((v) => !v);
-  const closeMenu = () => setIsMenuOpen(false);
+  const toggleMenu = () => {
+    setIsMenuOpen((v) => !v);
+    setActiveDropdown(null); // Reset dropdowns when menu opens/closes
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setActiveDropdown(null);
+  };
 
   const toggleDropdown = (dropdown) => {
     setActiveDropdown(activeDropdown === dropdown ? null : dropdown);
@@ -69,11 +89,25 @@ export default function Navbar() {
   const dropdownItems = {
     nclex: [
       { name: "NCLEX-RN", href: "/rushhour/nclex-rn" },
-      { name: "NCLEX-PN", href: "/rushhour/nclex-pn" }
+      { name: "NCLEX-PN", href: "/rushhour/nclex-pn" },
+      { name: "Buy Pdf", href: "/rushhour/pdf" }
     ],
     nursingtestbank: [
       { name: "RN - Nursingtestbank", href: "/rushhour/rn-nursingtestbank" },
-      { name: "LPN - Nursingtestbank", href: "/rushhour/lpn-nursingtestbank" }
+      { name: "LPN - Nursingtestbank", href: "/rushhour/lpn-nursingtestbank" },
+      { name: "Buy Pdf", href: "/rushhour/pdf" }
+    ],
+    atiteas: [
+      { name: "Ati Teas", href: "/rushhour/atiteas7" },
+      { name: "Buy Pdf", href: "/rushhour/pdf" }
+    ],
+    hesia2: [
+      { name: "Hesi A2", href: "/rushhour/hesia2" },
+      { name: "Buy Pdf", href: "/rushhour/pdf" }
+    ],
+    exitexams: [
+      { name: "Exit Exams", href: "/rushhour/exitexams" },
+      { name: "Buy Pdf", href: "/rushhour/pdf" }
     ]
   };
 
@@ -100,10 +134,31 @@ export default function Navbar() {
               Home
             </a>
 
-            {/* Ati Teas Link as Button */}
-            <a href="/rushhour/atiteas7" className={`${styles.navButton} ${styles.navLinkButton}`}>
-              Ati Teas
-            </a>
+            {/* Ati Teas Link with Dropdown */}
+            <div className={styles.dropdownContainer}>
+              <button 
+                className={`${styles.navButton} ${styles.navLinkButton} ${styles.dropdownToggle}`}
+                onClick={() => toggleDropdown('atiteas')}
+                onMouseEnter={() => setActiveDropdown('atiteas')}
+              >
+                Ati Teas
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'atiteas' && (
+                <div 
+                  className={styles.dropdownMenu}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  {dropdownItems.atiteas.map((item, index) => (
+                    <a key={index} href={item.href} className={styles.dropdownItem}>
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* NCLEX Link with Dropdown */}
             <div className={styles.dropdownContainer}>
@@ -131,10 +186,31 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Hesia2 Link as Button */}
-            <a href="/rushhour/hesia2" className={`${styles.navButton} ${styles.navLinkButton}`}>
-              Hesia2
-            </a>
+            {/* Hesia2 Link with Dropdown */}
+            <div className={styles.dropdownContainer}>
+              <button 
+                className={`${styles.navButton} ${styles.navLinkButton} ${styles.dropdownToggle}`}
+                onClick={() => toggleDropdown('hesia2')}
+                onMouseEnter={() => setActiveDropdown('hesia2')}
+              >
+                Hesia2
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'hesia2' && (
+                <div 
+                  className={styles.dropdownMenu}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  {dropdownItems.hesia2.map((item, index) => (
+                    <a key={index} href={item.href} className={styles.dropdownItem}>
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Nursing Test Bank Link with Dropdown */}
             <div className={styles.dropdownContainer}>
@@ -162,10 +238,31 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Exit Exams Link as Button */}
-            <a href="/rushhour/exitexams" className={`${styles.navButton} ${styles.navLinkButton}`}>
-              Exit Exams
-            </a>
+            {/* Exit Exams Link with Dropdown */}
+            <div className={styles.dropdownContainer}>
+              <button 
+                className={`${styles.navButton} ${styles.navLinkButton} ${styles.dropdownToggle}`}
+                onClick={() => toggleDropdown('exitexams')}
+                onMouseEnter={() => setActiveDropdown('exitexams')}
+              >
+                Exit Exams
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'exitexams' && (
+                <div 
+                  className={styles.dropdownMenu}
+                  onMouseLeave={() => setActiveDropdown(null)}
+                >
+                  {dropdownItems.exitexams.map((item, index) => (
+                    <a key={index} href={item.href} className={styles.dropdownItem}>
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
             
             {/* Auth Buttons */}
             <a href="/user/signin" className={`${styles.navButton} ${styles.signIn}`}>
@@ -219,6 +316,7 @@ export default function Navbar() {
           role="dialog"
           aria-modal="true"
           aria-label="Main menu"
+          ref={mobileDropdownRef}
         >
           {/* Close Button */}
           <button
@@ -246,15 +344,48 @@ export default function Navbar() {
             <a href="/" className={styles.mobileNavButton} onClick={closeMenu}>
               Home
             </a>
-            <a href="/rushhour/atiteas7" className={styles.mobileNavButton} onClick={closeMenu}>
-              Ati Teas
-            </a>
+
+            {/* Ati Teas Mobile Dropdown */}
+            <div className={styles.mobileDropdown}>
+              <button 
+                className={`${styles.mobileNavButton} ${styles.mobileDropdownToggle}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('mobileAtiTeas');
+                }}
+              >
+                Ati Teas
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'mobileAtiTeas' && (
+                <div className={styles.mobileDropdownContent}>
+                  {dropdownItems.atiteas.map((item, index) => (
+                    <a 
+                      key={index} 
+                      href={item.href} 
+                      className={styles.mobileDropdownItem} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                      }}
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* NCLEX Mobile Dropdown */}
             <div className={styles.mobileDropdown}>
               <button 
                 className={`${styles.mobileNavButton} ${styles.mobileDropdownToggle}`}
-                onClick={() => toggleDropdown('mobileNclex')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('mobileNclex');
+                }}
               >
                 NCLEX
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -264,7 +395,15 @@ export default function Navbar() {
               {activeDropdown === 'mobileNclex' && (
                 <div className={styles.mobileDropdownContent}>
                   {dropdownItems.nclex.map((item, index) => (
-                    <a key={index} href={item.href} className={styles.mobileDropdownItem} onClick={closeMenu}>
+                    <a 
+                      key={index} 
+                      href={item.href} 
+                      className={styles.mobileDropdownItem} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                      }}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -272,15 +411,47 @@ export default function Navbar() {
               )}
             </div>
 
-            <a href="/rushhour/hesia2" className={styles.mobileNavButton} onClick={closeMenu}>
-              Hesia2
-            </a>
+            {/* Hesia2 Mobile Dropdown */}
+            <div className={styles.mobileDropdown}>
+              <button 
+                className={`${styles.mobileNavButton} ${styles.mobileDropdownToggle}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('mobileHesia2');
+                }}
+              >
+                Hesia2
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'mobileHesia2' && (
+                <div className={styles.mobileDropdownContent}>
+                  {dropdownItems.hesia2.map((item, index) => (
+                    <a 
+                      key={index} 
+                      href={item.href} 
+                      className={styles.mobileDropdownItem} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                      }}
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Nursing Test Bank Mobile Dropdown */}
             <div className={styles.mobileDropdown}>
               <button 
                 className={`${styles.mobileNavButton} ${styles.mobileDropdownToggle}`}
-                onClick={() => toggleDropdown('mobileTestBank')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('mobileTestBank');
+                }}
               >
                 Nursing Test Bank
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -290,7 +461,15 @@ export default function Navbar() {
               {activeDropdown === 'mobileTestBank' && (
                 <div className={styles.mobileDropdownContent}>
                   {dropdownItems.nursingtestbank.map((item, index) => (
-                    <a key={index} href={item.href} className={styles.mobileDropdownItem} onClick={closeMenu}>
+                    <a 
+                      key={index} 
+                      href={item.href} 
+                      className={styles.mobileDropdownItem} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                      }}
+                    >
                       {item.name}
                     </a>
                   ))}
@@ -298,9 +477,38 @@ export default function Navbar() {
               )}
             </div>
 
-            <a href="/rushhour/exitexams" className={styles.mobileNavButton} onClick={closeMenu}>
-              Exit Exams
-            </a>
+            {/* Exit Exams Mobile Dropdown */}
+            <div className={styles.mobileDropdown}>
+              <button 
+                className={`${styles.mobileNavButton} ${styles.mobileDropdownToggle}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleDropdown('mobileExitExams');
+                }}
+              >
+                Exit Exams
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                  <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                </svg>
+              </button>
+              {activeDropdown === 'mobileExitExams' && (
+                <div className={styles.mobileDropdownContent}>
+                  {dropdownItems.exitexams.map((item, index) => (
+                    <a 
+                      key={index} 
+                      href={item.href} 
+                      className={styles.mobileDropdownItem} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                      }}
+                    >
+                      {item.name}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Auth Buttons */}
             <a href="/user/signin" className={`${styles.mobileNavButton} ${styles.mobileSignIn}`} onClick={closeMenu}>

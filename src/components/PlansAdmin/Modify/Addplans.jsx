@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "./Addplans.module.css";
 import { fetchWithCsrf } from "@/lib/fetchWithCsrf";
-import { FaTimes, FaSave, FaPaperPlane } from "react-icons/fa";
 
 const API_PREFIX = "/api";
 
@@ -72,18 +71,18 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
       <aside className={`${styles.panel} ${visible ? styles.show : ''}`} aria-hidden={!visible}>
         <div className={styles.header}>
           <div className={styles.headerContent}>
-            <h3 className={styles.panelTitle}>Create New Plan</h3>
-            <p className={styles.panelSubtitle}>Add a new subscription plan for your exams</p>
+            <h3 className={styles.panelTitle}>➕ Create New Plan</h3>
+            <p className={styles.panelSubtitle}>Configure a new subscription plan</p>
           </div>
           <button className={styles.close} onClick={onClose}>
-            <FaTimes />
+            ✕
           </button>
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Exam Type
+              📊 Exam Type
             </label>
             <select 
               value={examType} 
@@ -98,7 +97,7 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Duration (days)
+              ⏱️ Duration (days)
             </label>
             <select 
               value={duration} 
@@ -108,13 +107,15 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
               <option value={30}>30 days</option>
               <option value={60}>60 days</option>
               <option value={90}>90 days</option>
+              <option value={180}>180 days</option>
+              <option value={365}>365 days</option>
             </select>
           </div>
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                Price
+                💰 Price
               </label>
               <input 
                 value={price} 
@@ -130,7 +131,7 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
 
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                Currency
+                💵 Currency
               </label>
               <select 
                 value={currency} 
@@ -138,32 +139,34 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
                 className={styles.select}
               >
                 <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
               </select>
             </div>
           </div>
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Plan Title
+              📝 Plan Title
             </label>
             <input 
               value={title} 
               onChange={e => setTitle(e.target.value)} 
-              placeholder="e.g., 30 Days Premium Access"
+              placeholder="e.g., Premium 30-Day Access"
               className={styles.input}
             />
           </div>
 
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              Features <span className={styles.hint}>(comma-separated)</span>
+              ✨ Features <span className={styles.hint}>(comma-separated list)</span>
             </label>
             <textarea 
               value={featuresRaw} 
               onChange={e => setFeaturesRaw(e.target.value)} 
-              placeholder="Full practice access, Timed exam mode, Detailed solutions, Progress tracking"
+              placeholder="Full practice access, Timed exam mode, Detailed solutions, Progress tracking, 24/7 support"
               className={styles.textarea}
-              rows={3}
+              rows={4}
               required
             />
           </div>
@@ -176,12 +179,12 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
             >
               {submitting ? (
                 <>
-                  <FaPaperPlane className={styles.btnIcon} />
-                  Creating...
+                  <span className={styles.btnIcon}>⏳</span>
+                  Creating Plan...
                 </>
               ) : (
                 <>
-                  <FaSave className={styles.btnIcon} />
+                  <span className={styles.btnIcon}>✓</span>
                   Create Plan
                 </>
               )}
@@ -191,6 +194,7 @@ export default function Addplans({ visible = false, onClose = () => {}, onSucces
               onClick={onClose} 
               className={styles.secondaryBtn}
             >
+              <span className={styles.btnIcon}>✕</span>
               Cancel
             </button>
           </div>

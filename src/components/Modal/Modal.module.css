@@ -5,74 +5,90 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 20px;
+  padding: 2rem;
+  backdrop-filter: blur(8px);
+  animation: backdropFadeIn 0.3s ease-out;
+}
+
+@keyframes backdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modalContent {
-  position: relative;
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 2rem;
   max-width: 95vw;
   max-height: 95vh;
-  animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 
-    0 32px 64px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  width: auto;
+  height: auto;
   display: flex;
   flex-direction: column;
+  box-shadow: 
+    0 32px 64px rgba(0, 0, 0, 0.4),
+    0 16px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  animation: modalSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
 }
 
 .modalTitle {
-  color: white;
-  font-size: 20px;
-  font-weight: 600;
-  margin: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.modalTitle i {
-  color: #60a5fa;
-  font-size: 22px;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: #1e293b;
+  margin: 0;
 }
 
 .closeButton {
-  background: rgba(239, 68, 68, 0.9);
-  color: white;
+  width: 2.5rem;
+  height: 2.5rem;
   border: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 18px;
-  transition: all 0.3s ease;
+  font-size: 1.125rem;
+  color: #64748b;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(10px);
 }
 
 .closeButton:hover {
-  background: rgba(239, 68, 68, 1);
-  transform: scale(1.1) rotate(90deg);
+  background: #ef4444;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .imageContainer {
@@ -81,195 +97,116 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px;
-  overflow: hidden;
+  padding: 2rem;
+  max-height: calc(95vh - 120px);
+  min-height: 300px;
+  background: 
+    radial-gradient(circle at center, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
 }
 
 .evidenceImage {
   max-width: 100%;
-  max-height: 70vh;
-  border-radius: 16px;
-  display: block;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-height: 600px;
+  object-fit: contain;
+  border-radius: 1rem;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 10px 20px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
 }
 
-.imageContainer:hover .evidenceImage {
-  transform: scale(1.02);
+.evidenceImage:hover {
+  transform: scale(1.01);
 }
 
 .imageOverlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  bottom: 2rem;
+  right: 2rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.3s ease;
-  border-radius: 16px;
-  margin: 32px;
-}
-
-.imageContainer:hover .imageOverlay {
-  opacity: 1;
+  gap: 0.75rem;
 }
 
 .downloadButton {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e293b;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 0.75rem;
+  font-weight: 400;
+  font-size: 0.875rem;
+  cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .downloadButton:hover {
+  background: white;
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-color: #6366f1;
+  color: #6366f1;
 }
 
 .modalFooter {
+  padding: 1rem 2rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
   display: flex;
-  gap: 12px;
-  padding: 24px 32px;
-  background: rgba(255, 255, 255, 0.05);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.actionButton {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  flex: 1;
-  justify-content: center;
+  justify-content: flex-end;
+  background: rgba(248, 250, 252, 0.8);
   backdrop-filter: blur(10px);
 }
 
-.actionButton:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateY(-1px);
-}
-
-.actionButtonPrimary {
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  flex: 1;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-}
-
-.actionButtonPrimary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .modalBackdrop,
-  .modalContent,
-  .closeButton,
-  .evidenceImage,
-  .downloadButton,
-  .actionButton,
-  .actionButtonPrimary {
-    animation: none;
-    transition: none;
-  }
-  
-  .closeButton:hover,
-  .downloadButton:hover,
-  .actionButton:hover,
-  .actionButtonPrimary:hover {
-    transform: none;
-  }
-  
-  .imageContainer:hover .evidenceImage {
-    transform: none;
-  }
-}
-
-/* Focus styles */
-.closeButton:focus,
-.downloadButton:focus,
-.actionButton:focus,
-.actionButtonPrimary:focus {
-  outline: 3px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-/* Responsive */
+/* Responsive Modal */
 @media (max-width: 768px) {
   .modalBackdrop {
-    padding: 16px;
+    padding: 1rem;
+  }
+  
+  .modalContent {
+    max-width: 98vw;
+    max-height: 98vh;
+    border-radius: 1.5rem;
   }
   
   .modalHeader {
-    padding: 20px 24px;
-  }
-  
-  .modalTitle {
-    font-size: 18px;
+    padding: 1.25rem 1.5rem;
   }
   
   .imageContainer {
-    padding: 24px;
+    padding: 1.5rem;
+    max-height: calc(98vh - 100px);
   }
   
-  .modalFooter {
-    padding: 20px 24px;
+  .imageOverlay {
+    bottom: 1rem;
+    right: 1rem;
     flex-direction: column;
   }
   
-  .closeButton {
-    width: 40px;
-    height: 40px;
+  .downloadButton {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
   }
+}
+
+/* Loading state for image */
+.imageContainer::before {
+  content: '🖼️';
+  font-size: 3rem;
+  position: absolute;
+  opacity: 0.3;
+  display: none;
+}
+
+.imageContainer.loading::before {
+  display: block;
+}
+
+.imageContainer.loading .evidenceImage {
+  opacity: 0;
 }

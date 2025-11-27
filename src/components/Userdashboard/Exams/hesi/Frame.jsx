@@ -11,10 +11,6 @@ import Format3 from "./formats/Format3";
 import Format4 from "./formats/Format4";
 import Format5 from "./formats/Format5";
 import Format6 from "./formats/Format6";
-import Format7 from "./formats/Format7";
-import Format8 from "./formats/Format8";
-import Format9 from "./formats/Format9";
-import Format10 from "./formats/Format10";
 
 import styles from "./Frame.module.css";
 
@@ -28,10 +24,6 @@ function mapFormatToComponent(format) {
     4: Format4,
     5: Format5,
     6: Format6,
-    7: Format7,
-    8: Format8,
-    9: Format9,
-    10: Format10,
   };
   return map[format] || Format1;
 }
@@ -61,7 +53,11 @@ export default function Frame({ mode, examname, displayExam }) {
     let isMounted = true;
     async function load() {
       await ensureCsrf();
-      const examRes = await fetch(`${API_BASE}/api/hesiexam/${encodeURIComponent(examname)}/`, {
+
+      // examname passed from parent is now the decoded exam name (spaces intact).
+      // Encode it once when constructing the fetch URL so backend receives correct percent-encoding.
+      const encodedExamName = encodeURIComponent(examname);
+      const examRes = await fetch(`${API_BASE}/api/hesiexam/${encodedExamName}/`, {
         credentials: "include",
       });
       if (examRes.status === 200) {
@@ -317,6 +313,7 @@ export default function Frame({ mode, examname, displayExam }) {
       <div className={styles.contentArea}>
         <div className={styles.questionArea}>
           <FormatComponent
+            key={question.id}
             question={question}
             mode={mode}
             selectedAnswer={(attempt && attempt.answers && attempt.answers[String(question.id)]) || null}

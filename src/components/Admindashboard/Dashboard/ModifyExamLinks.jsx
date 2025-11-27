@@ -66,11 +66,11 @@ export default function ModifyExamLinks() {
         </a>
 
         {/* Review Content Card */}
-        <a href="/admin/exams/modify/rn/" className={`${styles.linkCard} ${styles.reviewContent}`}>
+        <a href="/admin/exams/modify/nursingtestbank/RN/ati" className={`${styles.linkCard} ${styles.reviewContent}`}>
           <div className={styles.cardContent}>
             <span className={styles.linkIcon}>✏️</span>
             <div className={styles.linkContent}>
-              <span className={styles.linkTitle}>Edit RN Nursing Exam</span>
+              <span className={styles.linkTitle}>Edit RN NursingTestbank for ati</span>
               <span className={styles.linkDesc}>Modify existing exam content</span>
             </div>
             <span className={styles.arrow}>→</span>
@@ -79,11 +79,11 @@ export default function ModifyExamLinks() {
         </a>
 
         {/* Preview Exam Card */}
-        <a href="/admin/exams/modify/lpn/" className={`${styles.linkCard} ${styles.previewExam}`}>
+        <a href="/admin/exams/modify/nursingtestbank/RN/hesi" className={`${styles.linkCard} ${styles.previewExam}`}>
           <div className={styles.cardContent}>
             <span className={styles.linkIcon}>✏️</span>
             <div className={styles.linkContent}>
-              <span className={styles.linkTitle}>Edit LPN Nursing Exam</span>
+              <span className={styles.linkTitle}>Edit RN Nursing TestBank for hesi</span>
               <span className={styles.linkDesc}>Modify existing exam content</span>
             </div>
             <span className={styles.arrow}>→</span>

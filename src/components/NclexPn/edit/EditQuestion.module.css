@@ -1,0 +1,415 @@
+.container {
+  background: white;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.warningBanner {
+  background: #fffaf0;
+  border: 1px solid #fed7d7;
+  border-left: 4px solid #e53e3e;
+  padding: 16px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.95rem;
+  color: #744210;
+}
+
+.warningIcon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.form {
+  padding: 0;
+}
+
+.controlRow {
+  display: grid;
+  grid-template-columns: 1fr 100px;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-size: 0.95rem;
+}
+
+.labelIcon {
+  font-size: 1.1rem;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  background: white;
+  color: black;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.smallInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 400;
+  transition: all 0.3s ease;
+}
+
+.smallInput:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.editorGroup {
+  margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 0 24px;
+  font-size: 1.1rem;
+  color: #2d3748;
+}
+
+.sectionIcon {
+  font-size: 1.2rem;
+}
+
+.addButton {
+  padding: 8px 16px;
+  background: #48bb78;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto;
+}
+
+.addButton:hover:not(:disabled) {
+  background: #38a169;
+  transform: translateY(-1px);
+}
+
+.addButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.casesSection {
+  margin-bottom: 24px;
+}
+
+.casesList {
+  padding: 0 24px;
+}
+
+.caseItem {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.caseItem:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e0;
+}
+
+.caseActions {
+  margin-top: 12px;
+}
+
+.imageSection {
+  margin-bottom: 24px;
+  padding: 0 24px;
+}
+
+.fileInput {
+  width: 100%;
+  padding: 12px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.fileInput:hover {
+  border-color: #667eea;
+  background: #f1f5f9;
+}
+
+.imagePreview {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #edf2f7;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.imagePreview a {
+  color: #3182ce;
+  text-decoration: none;
+}
+
+.imagePreview a:hover {
+  text-decoration: underline;
+}
+
+.choicesSection {
+  margin-bottom: 24px;
+}
+
+.choicesList {
+  padding: 0 24px;
+}
+
+.choiceItem {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: all 0.3s ease;
+}
+
+.choiceItem:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+.choiceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.choiceLabel {
+  background: #667eea;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.choiceContent {
+  flex: 1;
+}
+
+.choiceControls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.checkboxText {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.orderLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.tinyInput {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.removeButton {
+  padding: 6px 12px;
+  background: #fed7d7;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.removeButton:hover {
+  background: #feb2b2;
+  transform: translateY(-1px);
+}
+
+.saveSection {
+  padding: 24px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 24px;
+}
+
+.saveButton {
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+  justify-content: center;
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.placeholder, .loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+  font-size: 1.1rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .controlRow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0 16px;
+  }
+
+  .editorGroup,
+  .casesList,
+  .choicesList,
+  .imageSection,
+  .sectionHeader {
+    padding: 0 16px;
+  }
+
+  .saveSection {
+    padding: 20px 16px;
+  }
+
+  .choiceControls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .addButton {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .choiceItem {
+    padding: 12px;
+  }
+
+  .saveButton {
+    width: 100%;
+    padding: 12px 20px;
+  }
+
+  .select, .smallInput, .tinyInput {
+    font-size: 0.9rem;
+  }
+}

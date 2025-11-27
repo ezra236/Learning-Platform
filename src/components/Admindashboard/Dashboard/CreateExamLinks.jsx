@@ -66,11 +66,11 @@ export default function CreateExamLinks() {
         </a>
 
         {/* Practice Test Card */}
-        <a href="/admin/exams/create/rn/" className={`${styles.linkCard} ${styles.practiceTest}`}>
+        <a href="/admin/exams/create/nursingtestbank/RN/ati" className={`${styles.linkCard} ${styles.practiceTest}`}>
           <div className={styles.cardContent}>
             <span className={styles.linkIcon}>📝</span>
             <div className={styles.linkContent}>
-              <span className={styles.linkTitle}>RN Nursing Exams</span>
+              <span className={styles.linkTitle}>RN Nursing Testbank for Ati</span>
               <span className={styles.linkDesc}>Create a basic RN exam in minutes</span>
             </div>
             <span className={styles.arrow}>→</span>
@@ -78,18 +78,6 @@ export default function CreateExamLinks() {
           <div className={styles.hoverEffect}></div>
         </a>
 
-        {/* Graded Exam Card */}
-        <a href="/admin/exams/create/lpn/" className={`${styles.linkCard} ${styles.gradedExam}`}>
-          <div className={styles.cardContent}>
-            <span className={styles.linkIcon}>📝</span>
-            <div className={styles.linkContent}>
-              <span className={styles.linkTitle}>LPN Nursing Exams</span>
-              <span className={styles.linkDesc}>Create a basic LPN exam in minutes</span>
-            </div>
-            <span className={styles.arrow}>→</span>
-          </div>
-          <div className={styles.hoverEffect}></div>
-        </a>
       </div>
     </div>
   );

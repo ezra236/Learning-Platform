@@ -1,4 +1,3 @@
-// EditPlan.jsx (enhanced with unicode icons)
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -96,7 +95,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
         throw new Error(j?.error || j?.detail || `Failed (${res.status})`);
       }
 
-      onSuccess && onSuccess("✨ Plan updated successfully");
+      onSuccess && onSuccess("✅ Plan updated successfully");
       onClose && onClose();
     } catch (err) {
       onError && onError(err.message || "❌ Failed to update plan");
@@ -117,11 +116,11 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
         <header className={styles.header}>
           <div className={styles.headText}>
             <div className={styles.title}>
-              <span className={styles.titleIcon}>✏️</span>
-              Edit Plan
+              <span className={styles.titleIcon}>✎</span>
+              Edit Subscription Plan
             </div>
             <div className={styles.subtitle}>
-              {local.title || "Untitled plan"} • 📅 {local.duration_days} days • 💰 {local.currency} {local.price}
+              Modify plan details and configuration
             </div>
           </div>
           <button
@@ -130,7 +129,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
             aria-label="Close edit panel"
             disabled={saving}
           >
-            ❌
+            ✕
           </button>
         </header>
 
@@ -153,10 +152,11 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
             <label className={styles.label}>
               <span className={styles.labelTitle}>💰 Price</span>
               <div className={styles.inputWithPrefix}>
-                <span className={styles.currencySymbol}>{local.currency === 'USD' ? '$' : 
-                  local.currency === 'EUR' ? '€' : 
-                  local.currency === 'GBP' ? '£' : 
-                  local.currency === 'JPY' ? '¥' : local.currency}</span>
+                <span className={styles.currencySymbol}>
+                  {local.currency === 'USD' ? '$' : 
+                   local.currency === 'EUR' ? '€' : 
+                   local.currency === 'GBP' ? '£' : local.currency}
+                </span>
                 <input
                   className={styles.input}
                   type="number"
@@ -179,32 +179,29 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
                 onChange={(e) => setField("currency", e.target.value)}
                 disabled={saving}
               >
-                <option value="USD">💵 USD - US Dollar</option>
-                <option value="EUR">💶 EUR - Euro</option>
-                <option value="GBP">💷 GBP - British Pound</option>
-                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
-                <option value="JPY">💴 JPY - Japanese Yen</option>
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
               </select>
             </label>
           </div>
 
           <div className={styles.formSection}>
             <label className={styles.label}>
-              <span className={styles.labelTitle}>📅 Access Duration</span>
+              <span className={styles.labelTitle}>⏱️ Access Duration</span>
               <select
                 className={styles.select}
                 value={local.duration_days}
                 onChange={(e) => setField("duration_days", Number(e.target.value))}
                 disabled={saving}
               >
-                <option value={7}>7 days 🚀</option>
-                <option value={14}>14 days ⚡</option>
-                <option value={30}>30 days 📊</option>
-                <option value={60}>60 days 🗓️</option>
-                <option value={90}>90 days 📈</option>
-                <option value={180}>180 days 🎯</option>
-                <option value={365}>365 days 🌟</option>
+                <option value={7}>7 days</option>
+                <option value={14}>14 days</option>
+                <option value={30}>30 days</option>
+                <option value={60}>60 days</option>
+                <option value={90}>90 days</option>
+                <option value={180}>180 days</option>
+                <option value={365}>365 days</option>
               </select>
             </label>
           </div>
@@ -222,7 +219,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
                   <span className={styles.toggleThumb} />
                 </span>
                 <span className={styles.toggleText}>
-                  {local.active ? "🟢 Active" : "⚪ Inactive"}
+                  {local.active ? "Active" : "Inactive"}
                 </span>
               </button>
             </div>
@@ -230,18 +227,18 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
 
           <div className={styles.formSection}>
             <div className={styles.label}>
-              <span className={styles.labelTitle}>✨ Features & Benefits</span>
+              <span className={styles.labelTitle}>✨ Plan Features</span>
               <div className={styles.featuresWrap}>
                 {local.features.length === 0 && (
                   <div className={styles.noFeatures}>
-                    <span>📭 No features added yet</span>
-                    <span className={styles.noFeaturesHint}>Add your first feature below to get started!</span>
+                    <span>📭 No features configured</span>
+                    <span className={styles.noFeaturesHint}>Add features using the input below</span>
                   </div>
                 )}
                 <div className={styles.featureList}>
                   {local.features.map((feature) => (
                     <div key={feature.id} className={styles.featureTag}>
-                      <span className={styles.featureIcon}>✅</span>
+                      <span className={styles.featureIcon}>✓</span>
                       <span className={styles.featureText}>{feature.name}</span>
                       <button 
                         type="button" 
@@ -250,7 +247,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
                         disabled={saving}
                         aria-label={`Remove feature: ${feature.name}`}
                       >
-                        🗑️
+                        ✕
                       </button>
                     </div>
                   ))}
@@ -258,7 +255,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
 
                 <div className={styles.addFeatureRow}>
                   <input
-                    placeholder="➕ Add a new feature (e.g., Full practice exams, 24/7 support, Progress tracking...)"
+                    placeholder="Add a new feature..."
                     value={addingFeature}
                     onChange={(e) => setAddingFeature(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -271,7 +268,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
                     onClick={addFeature}
                     disabled={saving || !addingFeature.trim()}
                   >
-                    ➕
+                    +
                   </button>
                 </div>
               </div>
@@ -285,9 +282,9 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
               disabled={saving}
             >
               <span className={styles.btnIcon}>
-                {saving ? "⏳" : "💾"}
+                {saving ? "⏳" : "✓"}
               </span>
-              {saving ? "Saving Changes..." : "Save Changes"}
+              {saving ? "Saving..." : "Save Changes"}
             </button>
             <button
               type="button"
@@ -295,7 +292,7 @@ export default function EditPlan({ visible, plan, onClose, onSuccess, onError })
               onClick={() => !saving && onClose && onClose()}
               disabled={saving}
             >
-              <span className={styles.btnIcon}>❌</span>
+              <span className={styles.btnIcon}>✕</span>
               Cancel
             </button>
           </div>

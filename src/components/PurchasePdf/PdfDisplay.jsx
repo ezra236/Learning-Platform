@@ -36,6 +36,7 @@ export default function PdfDisplay() {
   const [error, setError] = useState(null);
   const [loadingPdfId, setLoadingPdfId] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedCards, setExpandedCards] = useState({});
 
   const fetchPdfs = async (isRefresh = false) => {
     if (isRefresh) {
@@ -110,32 +111,44 @@ export default function PdfDisplay() {
     fetchPdfs(true);
   };
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>📚 Digital Library</h1>
-          <p className={styles.subtitle}>Discover resources to boost your exam prep</p>
-        </div>
+  const toggleCardExpansion = (pdfId) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [pdfId]: !prev[pdfId]
+    }));
+  };
 
+  return (
+    <div id="pdf-display" tabIndex={-1} className={styles.container}>
+      <div className={styles.header}>
         {/* Category navbar */}
         <div className={styles.navbar}>
-          <button
-            className={`${styles.navBtn} ${selectedCategory === "All" ? styles.active : ""}`}
-            onClick={() => setSelectedCategory("All")}
-          >
-            All <span className={styles.navCount}>{categoryCounts.All}</span>
-          </button>
-
-          {CATEGORIES.map((cat) => (
+          <div className={styles.navGroup}>
             <button
-              key={cat}
-              className={`${styles.navBtn} ${selectedCategory === cat ? styles.active : ""}`}
-              onClick={() => setSelectedCategory(cat)}
+              className={`${styles.navBtn} ${selectedCategory === "All" ? styles.active : ""}`}
+              onClick={() => setSelectedCategory("All")}
             >
-              {cat} <span className={styles.navCount}>{categoryCounts[cat] || 0}</span>
+              <span className={styles.navIcon}>📦</span>
+              All <span className={styles.navCount}>{categoryCounts.All}</span>
             </button>
-          ))}
+
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                className={`${styles.navBtn} ${selectedCategory === cat ? styles.active : ""}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                <span className={styles.navIcon}>
+                  {cat === "ATI TEAS" && "🧪"}
+                  {cat === "NCLEX" && "📋"}
+                  {cat === "EXIT EXAMS" && "🎓"}
+                  {cat === "HESI A2" && "📊"}
+                  {cat === "NURSING TESTBANK" && "🏥"}
+                </span>
+                {cat} <span className={styles.navCount}>{categoryCounts[cat] || 0}</span>
+              </button>
+            ))}
+          </div>
 
           <button 
             className={`${styles.refresh} ${refreshing ? styles.refreshing : ''}`} 
@@ -153,7 +166,7 @@ export default function PdfDisplay() {
       {loading && (
         <div className={styles.loading}>
           <div className={styles.spinner} />
-          <p>Loading content...</p>
+          <p>Loading study resources...</p>
         </div>
       )}
 
@@ -161,7 +174,8 @@ export default function PdfDisplay() {
         <div className={styles.errorBanner}>
           <div className={styles.errorIcon}>⚠️</div>
           <div className={styles.errorContent}>
-            <strong>Error:</strong> {error}
+            <strong>Unable to load content</strong>
+            <p>{error}</p>
           </div>
           <button className={styles.retryBtn} onClick={fetchPdfs}>
             Try Again
@@ -172,55 +186,93 @@ export default function PdfDisplay() {
       {!loading && filtered.length === 0 && (
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>📭</div>
-          <h3>No PDFs in this category</h3>
-          <p>Try another category or refresh the list.</p>
+          <h3>No resources found</h3>
+          <p>Try selecting a different category or refresh the list.</p>
         </div>
       )}
 
       <div className={styles.grid}>
         {filtered.map((p) => (
-          <div className={styles.card} key={p.id}>
+          <div 
+            className={`${styles.card} ${expandedCards[p.id] ? styles.expanded : ''}`} 
+            key={p.id}
+          >
             <div className={styles.cardHeader}>
-              <div className={styles.leftHeader}>
+              <div className={styles.cardBadge}>
+                <span className={styles.badgeIcon}>📄</span>
+                Digital PDF
+              </div>
+              <div className={styles.cardActions}>
+                <span className={styles.dateBadge}>
+                  📅 {new Date(p.created_at).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+
+            <div className={styles.cardContent}>
+              <div className={styles.cardMain}>
                 {p.proof_image ? (
                   <img src={p.proof_image} alt={`${p.name} proof`} className={styles.thumbnail} />
                 ) : (
-                  <div className={styles.pdfIcon}>📄</div>
+                  <div className={styles.pdfIcon}>📚</div>
                 )}
-                <div className={styles.titleBlock}>
+                
+                <div className={styles.cardInfo}>
                   <h3 className={styles.cardTitle}>{p.name}</h3>
-                  <div className={styles.categoryRow}>
-                    <span className={styles.categoryBadge}>{p.category}</span>
-                    <span className={styles.badgeSpacer} />
-                    <span className={styles.smallCreated}>{new Date(p.created_at).toLocaleDateString()}</span>
+                  <div className={styles.categoryBadge}>
+                    <span className={styles.categoryIcon}>
+                      {p.category === "ATI TEAS" && "🧪"}
+                      {p.category === "NCLEX" && "📋"}
+                      {p.category === "EXIT EXAMS" && "🎓"}
+                      {p.category === "HESI A2" && "📊"}
+                      {p.category === "NURSING TESTBANK" && "🏥"}
+                    </span>
+                    {p.category}
                   </div>
                 </div>
               </div>
 
-              <div className={styles.rightHeader}>
-                <div className={styles.cardBadge}>Digital PDF</div>
+              <div className={styles.cardBody}>
+                <div className={`${styles.description} ${expandedCards[p.id] ? styles.expanded : ''}`}>
+                  <p>{p.description}</p>
+                </div>
+                
+                {p.description.length > 120 && (
+                  <button 
+                    className={styles.readMoreBtn}
+                    onClick={() => toggleCardExpansion(p.id)}
+                  >
+                    {expandedCards[p.id] ? (
+                      <>
+                        <span>📏 Show Less</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>📖 Read More</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
-            </div>
 
-            <div className={styles.cardBody}>
-              <p className={styles.desc}>{p.description}</p>
-            </div>
-
-            <div className={styles.cardFooter}>
-              <div className={styles.priceContainer}>
-                <div className={styles.priceLabel}>Price</div>
-                <div className={styles.price}>${parseFloat(p.price).toFixed(2)}</div>
+              <div className={styles.cardFooter}>
+                <div className={styles.priceSection}>
+                  <div className={styles.priceLabel}>One-Time Purchase</div>
+                  <div className={styles.price}>${parseFloat(p.price).toFixed(2)}</div>
+                  <div className={styles.priceSubtitle}>Instant Digital Access</div>
+                </div>
+                
+                <button 
+                  className={`${styles.buyBtn} ${loadingPdfId === p.id ? styles.loading : ''}`} 
+                  onClick={() => handleBuyNow(p)}
+                  disabled={loadingPdfId === p.id}
+                >
+                  <span className={styles.btnIcon}>
+                    {loadingPdfId === p.id ? <div className={styles.spinnerSmall} /> : '🛒'}
+                  </span>
+                  {loadingPdfId === p.id ? 'Processing...' : 'Get Access'}
+                </button>
               </div>
-              <button 
-                className={`${styles.buyBtn} ${loadingPdfId === p.id ? styles.loading : ''}`} 
-                onClick={() => handleBuyNow(p)}
-                disabled={loadingPdfId === p.id}
-              >
-                <span className={styles.btnIcon}>
-                  {loadingPdfId === p.id ? <div className={styles.spinnerSmall} /> : '🛒'}
-                </span>
-                {loadingPdfId === p.id ? 'Processing...' : 'Buy Now'}
-              </button>
             </div>
           </div>
         ))}

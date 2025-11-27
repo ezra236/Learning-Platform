@@ -10,7 +10,10 @@ function getCsrfToken() {
   return fetch(`${API_BASE}/api/auth/csrf/`, {
     method: "GET",
     credentials: "include",
-  }).then((r) => r.json()).then((j) => j.csrfToken).catch(() => null);
+  })
+    .then((r) => r.json())
+    .then((j) => j.csrfToken)
+    .catch(() => null);
 }
 
 export default function MarketingQueue() {
@@ -26,14 +29,14 @@ export default function MarketingQueue() {
         method: "GET",
         credentials: "include",
         headers: {
-          "Accept": "application/json",
+          Accept: "application/json",
         },
       });
       if (res.status === 200) {
         const data = await res.json();
-        const ann = (data.announcements || []).map(a => ({...a, type: "announcement"}));
-        const camp = (data.campaigns || []).map(c => ({...c, type: "campaign"}));
-        const merged = [...ann, ...camp];
+        // now the backend returns only campaigns
+        const camp = (data.campaigns || []).map((c) => ({ ...c, type: "campaign" }));
+        const merged = [...camp];
         setQueue(merged);
         if (merged.length === 0) {
           setIndex(0);
@@ -45,25 +48,6 @@ export default function MarketingQueue() {
       }
     } catch (err) {
       console.error("Failed to fetch marketing queue", err);
-    }
-  }
-
-  async function markAnnouncementSeen(id) {
-    if (!id || markingRef.current[`announcement:${id}`]) return;
-    markingRef.current[`announcement:${id}`] = true;
-    try {
-      if (!csrfRef.current) csrfRef.current = await getCsrfToken();
-      await fetch(`${API_BASE}/api/marketing/announcement_seen/`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfRef.current || "",
-        },
-        body: JSON.stringify({ announcement_id: id }),
-      });
-    } catch (err) {
-      console.error("Failed to mark announcement seen", err);
     }
   }
 
@@ -103,11 +87,8 @@ export default function MarketingQueue() {
   useEffect(() => {
     const item = queue[index];
     if (!item) return;
-    if (item.type === "announcement") {
-      markAnnouncementSeen(item.id);
-    } else if (item.type === "campaign") {
-      markCampaignSeen(item.id);
-    }
+    // All items are campaigns now
+    markCampaignSeen(item.id);
   }, [queue, index]);
 
   function onCloseCurrent() {
@@ -126,6 +107,7 @@ export default function MarketingQueue() {
   }
 
   function onNavigate(direction) {
+    if (queue.length === 0) return;
     if (direction === "next") {
       setIndex((prev) => (prev + 1) % queue.length);
     } else {
@@ -139,7 +121,7 @@ export default function MarketingQueue() {
   if (isMinimized) {
     return (
       <div className={styles.minimizedContainer}>
-        <button 
+        <button
           className={styles.expandButton}
           onClick={onMinimize}
           aria-label="Expand marketing queue"
@@ -158,9 +140,7 @@ export default function MarketingQueue() {
           <div className={styles.headerLeft}>
             <span className={styles.icon}>📢</span>
             <div className={styles.titleSection}>
-              <h3 className={styles.title}>
-                {current.type === "announcement" ? "Announcement" : "Special Offer"}
-              </h3>
+              <h3 className={styles.title}>Campaign</h3>
               {queue.length > 1 && (
                 <span className={styles.counter}>
                   {index + 1} of {queue.length}
@@ -171,14 +151,14 @@ export default function MarketingQueue() {
           <div className={styles.headerRight}>
             {queue.length > 1 && (
               <>
-                <button 
+                <button
                   className={styles.navButton}
                   onClick={() => onNavigate("prev")}
                   aria-label="Previous"
                 >
                   ◀
                 </button>
-                <button 
+                <button
                   className={styles.navButton}
                   onClick={() => onNavigate("next")}
                   aria-label="Next"
@@ -187,18 +167,14 @@ export default function MarketingQueue() {
                 </button>
               </>
             )}
-            <button 
+            <button
               className={styles.minimizeButton}
               onClick={onMinimize}
               aria-label="Minimize"
             >
               ➖
             </button>
-            <button 
-              className={styles.closeButton}
-              onClick={onCloseCurrent}
-              aria-label="Close"
-            >
+            <button className={styles.closeButton} onClick={onCloseCurrent} aria-label="Close">
               ✕
             </button>
           </div>
@@ -206,85 +182,63 @@ export default function MarketingQueue() {
 
         {/* Content */}
         <div className={styles.content}>
-          {current.type === "announcement" && (
-            <div className={styles.mediaContainer}>
-              {current.format === "image" && (
-                <img 
-                  className={`${styles.media} ${styles.imageMedia}`} 
-                  src={current.mediapath} 
-                  alt="announcement" 
-                />
-              )}
-              {current.format === "video" && (
-                <video 
-                  className={`${styles.media} ${styles.videoMedia}`} 
-                  src={current.mediapath} 
-                  controls 
-                  autoPlay 
-                  muted 
-                />
-              )}
-            </div>
-          )}
+          {/* campaign rendering (kept from original) */}
+          <div className={styles.campaignContainer}>
+            {(current.format === "image" || current.format === "video") && (
+              <div className={styles.mediaContainer}>
+                {current.format === "image" && (
+                  <img
+                    className={`${styles.media} ${styles.imageMedia}`}
+                    src={current.mediapath}
+                    alt={current.heading || "campaign"}
+                  />
+                )}
+                {current.format === "video" && (
+                  <video
+                    className={`${styles.media} ${styles.videoMedia}`}
+                    src={current.mediapath}
+                    controls
+                    autoPlay
+                    muted
+                  />
+                )}
+              </div>
+            )}
 
-          {current.type === "campaign" && (
-            <div className={styles.campaignContainer}>
-              {(current.format === "image" || current.format === "video") && (
-                <div className={styles.mediaContainer}>
-                  {current.format === "image" && (
-                    <img 
-                      className={`${styles.media} ${styles.imageMedia}`} 
-                      src={current.mediapath} 
-                      alt={current.heading || "campaign"} 
-                    />
-                  )}
-                  {current.format === "video" && (
-                    <video 
-                      className={`${styles.media} ${styles.videoMedia}`} 
-                      src={current.mediapath} 
-                      controls 
-                      autoPlay 
-                      muted 
-                    />
-                  )}
-                </div>
-              )}
-              
-              {(current.heading || current.description) && (
-                <div className={styles.caption}>
-                  {current.heading && <h4 className={styles.heading}>{current.heading}</h4>}
-                  {current.description && <p className={styles.description}>{current.description}</p>}
-                  {current.link && (
-                    <a 
-                      className={styles.link} 
-                      href={current.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      🔗 See More
-                    </a>
-                  )}
-                </div>
-              )}
+            {(current.heading || current.description) && (
+              <div className={styles.caption}>
+                {current.heading && <h4 className={styles.heading}>{current.heading}</h4>}
+                {current.description && <p className={styles.description}>{current.description}</p>}
+                {current.link && (
+                  <a
+                    className={styles.link}
+                    href={current.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    🔗 See More
+                  </a>
+                )}
+              </div>
+            )}
 
-              {current.format === "none" && (
-                <div className={styles.textCampaign}>
-                  {current.heading && <h3 className={styles.heading}>{current.heading}</h3>}
-                  {current.description && <p className={styles.description}>{current.description}</p>}
-                  {current.link && (
-                    <a 
-                      className={styles.link} 
-                      href={current.link} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      🔗 Learn More
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+            {current.format === "none" && (
+              <div className={styles.textCampaign}>
+                {current.heading && <h3 className={styles.heading}>{current.heading}</h3>}
+                {current.description && <p className={styles.description}>{current.description}</p>}
+                {current.link && (
+                  <a
+                    className={styles.link}
+                    href={current.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    🔗 Learn More
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -1,408 +1,282 @@
-// src/components/Blog.jsx
-"use client";
+import styles from './Blog.module.css';
+import { useState, useEffect, useRef } from 'react';
 
-import React, { useState, useEffect } from "react";
-import styles from "./Blog.module.css";
-import Notification from "../../Notification";
-
-export default function Blog() {
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [canUseTrial, setCanUseTrial] = useState(false);
-
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
-  // utility to read cookie (for CSRF if needed)
-  function getCookie(name) {
-    if (typeof document === "undefined") return null;
-    const cookieString = document.cookie || "";
-    const cookies = cookieString.split(";").map((c) => c.trim());
-    for (const c of cookies) {
-      if (c.startsWith(name + "=")) {
-        return decodeURIComponent(c.substring(name.length + 1));
-      }
-    }
-    return null;
-  }
-
+const Blog = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  const containerRef = useRef(null);
+  const cardsRef = useRef([]);
+  
   useEffect(() => {
-    // on mount, query whether user can use free trial
-    let mounted = true;
-    async function check() {
-      setInitialLoading(true);
-      try {
-        const url = `${apiBase.replace(/\/$/, "")}/api/can-use-free-trial/`;
-        const res = await fetch(url, {
-          method: "GET",
-          credentials: "include",
-          headers: { "Accept": "application/json" },
+    setIsVisible(true);
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add(styles.visible);
+          }
         });
-
-        if (!res.ok) {
-          // treat any error as "deny" but log
-          console.error("can-use-free-trial error status:", res.status);
-          if (mounted) setCanUseTrial(false);
-        } else {
-          const data = await res.json();
-          if (mounted) setCanUseTrial(Boolean(data.allowed));
-        }
-      } catch (err) {
-        console.error("can-use-free-trial exception:", err);
-        if (mounted) setCanUseTrial(false);
-      } finally {
-        if (mounted) setInitialLoading(false);
+      },
+      { 
+        threshold: 0.1,
+        rootMargin: '50px' 
       }
-    }
-    check();
+    );
+
+    cardsRef.current.forEach((card) => {
+      if (card) observer.observe(card);
+    });
+
     return () => {
-      mounted = false;
-    };
-  }, [apiBase]);
-
-  // Spinner reused
-  const Spinner = ({ size = 18 }) => (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      role="img"
-      aria-hidden="true"
-      style={{ display: "inline-block", verticalAlign: "middle", marginLeft: 8 }}
-    >
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.25" />
-      <path
-        d="M22 12A10 10 0 0 0 12 2"
-        stroke="currentColor"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
-      >
-        <animateTransform
-          attributeName="transform"
-          attributeType="XML"
-          type="rotate"
-          from="0 12 12"
-          to="360 12 12"
-          dur="0.9s"
-          repeatCount="indefinite"
-        />
-      </path>
-    </svg>
-  );
-
-  // Called when "Start Free Trial" is clicked
-  async function handleStartFreeTrial() {
-    setError(null);
-    setLoading(true);
-
-    try {
-      const url = `${apiBase.replace(/\/$/, "")}/api/subscribe-trial/`;
-      const csrftoken = getCookie("csrftoken");
-
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(csrftoken ? { "X-CSRFToken": csrftoken } : {}),
-        },
-        body: JSON.stringify({}),
+      cardsRef.current.forEach((card) => {
+        if (card) observer.unobserve(card);
       });
+    };
+  }, []);
 
-      if (res.status === 201 || res.ok) {
-        // success: reload the page (full refresh)
-        if (typeof window !== "undefined") {
-          window.location.reload();
-          return;
-        }
-      }
-
-      // If trial already used (409), show message and hide button
-      if (res.status === 409) {
-        setError("Free trial already used for this account/email.");
-        setCanUseTrial(false);
-        setLoading(false);
-        return;
-      }
-
-      if (res.status === 401 || res.status === 403) {
-        setError("Authentication required. Please sign in and try again.");
-        setLoading(false);
-        return;
-      }
-
-      let data;
-      try {
-        data = await res.json();
-      } catch (e) {
-        data = null;
-      }
-      const serverMessage = data && (data.detail || data.error || JSON.stringify(data));
-      setError(serverMessage || `Subscription API returned status ${res.status}`);
-      setLoading(false);
-    } catch (err) {
-      console.error("subscribe-trial exception:", err);
-      setError("Network error while subscribing for trial. Make sure the API is reachable.");
-      setLoading(false);
-    }
-  }
-
-  // The rest of the component (unchanged layout) but Start Free Trial button is conditional
-  const planItems = [
+  const plans = [
     {
+      title: "ATI TEAS 7",
       icon: "🧪",
-      title: "ATI TEAS Prep",
-      description:
-        "Complete preparation for the ATI TEAS exam with practice tests, study guides, and personalized learning paths.",
-      color: "#4f46e5",
-      features: [
-        "500+ Practice Questions",
-        "Full-Length Mock Exams",
-        "Detailed Explanations",
-        "Progress Tracking",
-      ],
+      description: "Comprehensive preparation for the ATI TEAS 7 exam with practice tests and study materials",
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      features: ["2000+ Practice Questions", "Full-length Mock Tests", "Detailed Analytics", "Mobile App Access"],
+      successRate: "98%",
+      students: "5,000+"
     },
     {
-      icon: "❤️",
-      title: "HESI A2 Prep",
-      description:
-        "Comprehensive HESI A2 preparation covering all sections including Math, Reading, Vocabulary and Anatomy.",
-      color: "#10b981",
-      features: [
-        "All Subject Coverage",
-        "Adaptive Learning",
-        "Performance Analytics",
-        "Mobile Access",
-      ],
-    },
-    {
-      icon: "👩‍⚕️",
-      title: "NCLEX Prep",
-      description:
-        "Proven NCLEX-RN and NCLEX-PN preparation with thousands of practice questions and simulated exams.",
-      color: "#f59e0b",
-      features: ["CAT Simulator", "Question Bank 2000+", "Content Review", "Pass Guarantee"],
-    },
-    {
+      title: "HESI A2",
       icon: "📚",
-      title: "Nursing Testbanks",
-      description:
-        "Extensive collection of nursing course testbanks to help you succeed in your nursing program.",
-      color: "#ef4444",
-      features: ["Multiple Specialties", "Instant Access", "Updated Content", "Faculty Approved"],
+      description: "Complete HESI A2 exam preparation course covering all sections",
+      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      features: ["All Subject Coverage", "Adaptive Learning", "Progress Dashboard", "Video Tutorials"],
+      successRate: "96%",
+      students: "3,500+"
     },
+    {
+      title: "NCLEX Prep",
+      icon: "⚕️",
+      description: "Everything you need to pass the NCLEX exam on your first attempt",
+      gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      features: ["NCLEX-Style Questions", "Test-taking Strategies", "Performance Tracking", "Expert Support"],
+      successRate: "99%",
+      students: "8,000+"
+    },
+    {
+      title: "Nursing Test Bank",
+      icon: "💼",
+      description: "Extensive collection of nursing test questions and answers",
+      gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+      features: ["10,000+ Questions", "Specialty Categories", "Mobile Access", "Regular Updates"],
+      successRate: "95%",
+      students: "12,000+"
+    },
+    {
+      title: "Exit Exams",
+      icon: "🎓",
+      description: "Prepare for your nursing program exit exams with confidence",
+      gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+      features: ["Comprehensive Review", "Timed Practice", "Score Predictions", "Faculty Support"],
+      successRate: "97%",
+      students: "4,200+"
+    }
   ];
 
-  // navigate to plans used by card Get Started (unchanged)
-  function navigateToPlans() {
-    try {
-      // SPA-friendly navigation if using next/navigation router
-      if (typeof window !== "undefined") {
-        window.location.href = "/user/plans";
-      }
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/user/plans";
-      }
+  // Add card to ref array
+  const addToRefs = (el) => {
+    if (el && !cardsRef.current.includes(el)) {
+      cardsRef.current.push(el);
     }
-  }
+  };
+
+  // Simple button handlers that do nothing but log
+  const handleGetStarted = (planTitle) => {
+    console.log(`Get Started clicked for ${planTitle}`);
+    // Add your actual navigation logic here when ready
+  };
+
+  const handleFreeTrial = (planTitle) => {
+    console.log(`Free Trial clicked for ${planTitle}`);
+    // Add your actual free trial logic here when ready
+  };
+
+  const handleExplorePrograms = () => {
+    console.log('Explore All Programs clicked');
+  };
+
+  const handleScheduleDemo = () => {
+    console.log('Schedule Demo clicked');
+  };
 
   return (
-    <div className={styles.container}>
-      {/* show Notification if free trial not available */}
-      {!initialLoading && !canUseTrial && (
-        <Notification
-          title="Free Trial Unavailable"
-          message="You have already used a free trial — no free plans available."
-        />
-      )}
-
-      {/* Accessibility live region */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: "hidden",
-          clip: "rect(0,0,0,0)",
-          whiteSpace: "nowrap",
-          border: 0,
-        }}
-      >
-        {loading ? "Processing trial subscription…" : ""}
+    <div 
+      ref={containerRef}
+      className={`${styles.container} ${isVisible ? styles.loaded : ''}`}
+    >
+      {/* Simple Light Background */}
+      <div className={styles.backgroundWrapper}>
+        <div className={styles.backgroundAnimation}></div>
       </div>
-
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <div className={styles.badge}>
-            <span className={styles.unicodeIcon}>⭐</span>
-            Premium Learning Platform
-          </div>
-          <h1 className={styles.title}>Welcome to RushHourCamp</h1>
-          <p className={styles.lead}>
-            Your gateway to exam success. Explore our resources and discover how to
-            transform your preparation journey.
-          </p>
-
-          <div className={styles.ctaSection}>
-            {/* Conditionally render Start Free Trial button only when allowed */}
-            {initialLoading ? (
-              <button type="button" className={styles.primaryCta} disabled>
-                Checking…
-              </button>
-            ) : (
-              canUseTrial && (
-                <button
-                  type="button"
-                  className={styles.primaryCta}
-                  onClick={handleStartFreeTrial}
-                  disabled={loading}
-                  aria-disabled={loading}
-                  title={loading ? "Processing trial…" : "Start Free Trial"}
-                >
-                  <span className={styles.unicodeIcon}>🚀</span>
-                  {loading ? "Starting…" : "Start Free Trial"}
-                  {loading && <Spinner />}
-                </button>
-              )
-            )}
-
-            <button
-              type="button"
-              className={styles.secondaryCta}
-              disabled={loading}
-              aria-disabled={loading}
-            >
-              <span className={styles.unicodeIcon}>▶️</span>
-              Watch Demo
-            </button>
-          </div>
-
-          {error && (
-            <div role="alert" style={{ color: "var(--danger, #c0392b)", marginTop: 12 }}>
-              {error}
-            </div>
-          )}
-
-          <div className={styles.scrollIndicator}>
-            <span className={styles.unicodeIcon}>⬇️</span>
-          </div>
-        </div>
-
-        <div className={styles.heroVisual}>
-          <div className={styles.floatingElement} style={{ animationDelay: "0s" }}>
-            <span className={styles.unicodeIcon}>📖</span>
-          </div>
-          <div className={styles.floatingElement} style={{ animationDelay: "2s" }}>
-            <span className={styles.unicodeIcon}>🎯</span>
-          </div>
-          <div className={styles.floatingElement} style={{ animationDelay: "4s" }}>
-            <span className={styles.unicodeIcon}>💡</span>
-          </div>
-        </div>
-      </section>
-
-      {/* The rest of the component (cards & stats) remains unchanged */}
-      <section className={styles.featuredSection}>
+    
+      
+      {/* Main Plans Grid */}
+      <main className={styles.mainContent}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>Our Premium Study Plans</h2>
-          <p className={styles.sectionSubtitle}>
-            Choose the perfect plan for your exam preparation and boost your confidence
-          </p>
+          <h2 className={styles.sectionSubtitle}>Choose Your Preparation Plan</h2>
+          <p className={styles.sectionSubtitle}>Select the program that matches your goals and start your journey today</p>
         </div>
 
-        <div className={styles.cards}>
-          {planItems.map((plan, index) => (
-            <article
-              key={plan.title + index}
-              className={styles.card}
-              style={{ animationDelay: `${index * 0.1}s` }}
+        <div className={styles.plansGrid}>
+          {plans.map((plan, index) => (
+            <div 
+              key={index} 
+              ref={addToRefs}
+              className={styles.planCard}
+              style={{ 
+                '--card-gradient': plan.gradient,
+              }}
             >
-              <div
-                className={styles.cardIcon}
-                style={{ backgroundColor: `${plan.color}15`, color: plan.color }}
-                aria-hidden
-              >
-                <span className={styles.unicodeIcon}>{plan.icon}</span>
-              </div>
-
+              {/* Card Background Elements */}
+              <div className={styles.cardGlow}></div>
+              <div className={styles.cardShine}></div>
+              
+              {/* Card Content */}
               <div className={styles.cardContent}>
-                <h3 className={styles.cardTitle}>{plan.title}</h3>
-                <p className={styles.cardDescription}>{plan.description}</p>
-
-                <div className={styles.featuresList}>
+                {/* Card Header */}
+                <div className={styles.cardHeader}>
+                  <div className={styles.planIconWrapper}>
+                    <div className={styles.iconBackground}></div>
+                    <span className={styles.planIcon}>{plan.icon}</span>
+                  </div>
+                  <div className={styles.titleSection}>
+                    <h3 className={styles.planTitle}>{plan.title}</h3>
+                    <div className={styles.planBadge}>
+                      <span className={styles.badgeText}>Most Popular</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Description */}
+                <p className={styles.planDescription}>{plan.description}</p>
+                
+                {/* Features List */}
+                <div className={styles.featureList}>
                   {plan.features.map((feature, featureIndex) => (
                     <div key={featureIndex} className={styles.featureItem}>
-                      <span
-                        className={styles.checkIcon}
-                        style={{ color: plan.color }}
-                        aria-hidden
-                      >
-                        ✓
-                      </span>
-                      <span>{feature}</span>
+                      <div className={styles.featureIcon}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span className={styles.featureText}>{feature}</span>
                     </div>
                   ))}
                 </div>
-
-                <div className={styles.cardMeta}>
-                  <button
+                
+                {/* Stats */}
+                <div className={styles.planStats}>
+                  <div className={styles.stat}>
+                    <span className={styles.statValue}>{plan.successRate}</span>
+                    <span className={styles.statLabel}>Success Rate</span>
+                  </div>
+                  <div className={styles.statDivider}></div>
+                  <div className={styles.stat}>
+                    <span className={styles.statValue}>{plan.students}</span>
+                    <span className={styles.statLabel}>Students</span>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className={styles.buttonGroup}>
+                  <button 
                     type="button"
-                    className={styles.getStartedBtn}
-                    style={{ backgroundColor: plan.color }}
-                    onClick={navigateToPlans}
-                    disabled={loading}
-                    aria-disabled={loading}
-                    title={loading ? "Navigating…" : "Get Started"}
+                    className={styles.primaryButton}
+                    onClick={() => handleGetStarted(plan.title)}
                   >
-                    {loading ? "Navigating…" : "Get Started"}
-                    <span className={styles.unicodeIcon}>→</span>
-                    {loading && <Spinner />}
+                    <span className={styles.buttonText}>Get Started</span>
+                    <span className={styles.buttonIcon}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                  </button>
+                  <button 
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => handleFreeTrial(plan.title)}
+                  >
+                    <span className={styles.buttonText}>Free Trial</span>
+                    <span className={styles.buttonIcon}>7 Days</span>
                   </button>
                 </div>
               </div>
-            </article>
+            </div>
           ))}
+        </div>
+      </main>
+
+      {/* CTA Section */}
+      <section className={styles.ctaSection}>
+        <div className={styles.ctaCard}>
+          <div className={styles.ctaBackground}></div>
+          <div className={styles.ctaContent}>
+            <h3 className={styles.ctaTitle}>Ready to Start Your Nursing Journey?</h3>
+            <p className={styles.ctaText}>
+              Join our community of successful nursing students and get the preparation 
+              you need to pass your exams with confidence
+            </p>
+            
+            <div className={styles.ctaFeatures}>
+              <div className={styles.ctaFeature}>
+                <span className={styles.featureIcon}>🎯</span>
+                <span>Proven Success Methods</span>
+              </div>
+              <div className={styles.ctaFeature}>
+                <span className={styles.featureIcon}>💡</span>
+                <span>Expert-Crafted Content</span>
+              </div>
+              <div className={styles.ctaFeature}>
+                <span className={styles.featureIcon}>🔄</span>
+                <span>Continuous Updates</span>
+              </div>
+            </div>
+            
+            <div className={styles.ctaButtons}>
+              <button 
+                type="button"
+                className={styles.ctaPrimary}
+                onClick={handleExplorePrograms}
+              >
+                <span>Explore All Programs</span>
+                <span className={styles.ctaIcon}>🎓</span>
+              </button>
+              <button 
+                type="button"
+                className={styles.ctaSecondary}
+                onClick={handleScheduleDemo}
+              >
+                <span>Schedule a Demo</span>
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className={styles.statsSection}>
-        <div className={styles.statsContainer}>
-          <div className={styles.statItem}>
-            <div className={styles.statIcon}>
-              <span className={styles.unicodeIcon}>🏆</span>
-            </div>
-            <div className={styles.statNumber}>95%</div>
-            <div className={styles.statLabel}>Success Rate</div>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statIcon}>
-              <span className={styles.unicodeIcon}>👥</span>
-            </div>
-            <div className={styles.statNumber}>10k+</div>
-            <div className={styles.statLabel}>Students Helped</div>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statIcon}>
-              <span className={styles.unicodeIcon}>🎧</span>
-            </div>
-            <div className={styles.statNumber}>24/7</div>
-            <div className={styles.statLabel}>Support Available</div>
-          </div>
-          <div className={styles.statItem}>
-            <div className={styles.statIcon}>
-              <span className={styles.unicodeIcon}>📝</span>
-            </div>
-            <div className={styles.statNumber}>500+</div>
-            <div className={styles.statLabel}>Practice Exams</div>
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <p className={styles.footerText}>
+            © 2024 Rushhourcamp. All rights reserved. Your success is our mission.
+          </p>
+          <div className={styles.footerLinks}>
+            <span className={styles.footerLink}>Privacy Policy</span>
+            <span className={styles.footerLink}>Terms of Service</span>
+            <span className={styles.footerLink}>Support</span>
           </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
-}
+};
+
+export default Blog;

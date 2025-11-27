@@ -183,20 +183,32 @@ const Footer = ({ customLinks }) => {
           </div>
 
           {/* Newsletter Section */}
-          {/* Newsletter Section */}
-        <div className={styles.newsletterSection}>
+          <div className={styles.newsletterSection}>
             <h4 className={styles.categoryTitle}>
-            <span className={styles.categoryIcon}>📰</span>
-                Newsletter
+              <span className={styles.categoryIcon}>📰</span>
+              Newsletter
             </h4>
             <p className={styles.newsletterText}>
               Get the latest study tips, resources, and healthcare education insights delivered to your inbox.
             </p>
             {/* embed the new form component (it contains input + subscribe button + success UI) */}
-          <div className={styles.newsletterWrapper}>
-            <NewsletterForm />
+            <div className={styles.newsletterWrapper}>
+              <NewsletterForm />
+              
+              {/* Made by Naxaura section below newsletter */}
+              <div className={styles.madeByNaxauraNewsletter}>
+                <span className={styles.madeByText}>Made by </span>
+                <a 
+                  href="https://naxaura.com" 
+                  className={styles.naxauraLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Naxaura
+                </a>
+              </div>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
@@ -227,6 +239,14 @@ const Footer = ({ customLinks }) => {
               {loadingLink === '/rushhour/terms' && <div className={styles.bottomLinkSpinner}></div>}
             </Link>
             <span className={styles.linkDivider}>•</span>
+            <a 
+              href="https://naxaura.com" 
+              className={styles.bottomLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Made by Naxaura
+            </a>
           </div>
 
           <div className={styles.socialLinks}>

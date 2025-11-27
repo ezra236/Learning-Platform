@@ -1,9 +1,7 @@
 // components/StatisticsDashboard.js
 import { useState } from 'react';
 import styles from './StatisticsDashboard.module.css';
-import TotalVisitors from './TotalVisitors';
 import TotalRegistered from './TotalRegistered';
-import PageVisits from './PageVisits';
 import TodaySignedIn from './TodaySignedIn';
 import TodayPayments from './TodayPayments';
 
@@ -17,9 +15,6 @@ const StatisticsDashboard = () => {
       
       <div className={styles.grid}>
         <div className={styles.gridItem}>
-          <TotalVisitors />
-        </div>
-        <div className={styles.gridItem}>
           <TotalRegistered />
         </div>
         <div className={styles.gridItem}>
@@ -27,9 +22,6 @@ const StatisticsDashboard = () => {
         </div>
         <div className={styles.gridItem}>
           <TodayPayments />
-        </div>
-        <div className={styles.gridItem}>
-          <PageVisits />
         </div>
       </div>
     </div>

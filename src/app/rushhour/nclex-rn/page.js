@@ -7,12 +7,14 @@ import Footer from "@/components/Footer";
 import Ai from "@/components/Ai";
 import Whatsapp from "@/components/Whatsapp";
 import HeroNclexrn from "@/features/LandingPage/HeroNclexrn";
+import Nclex from "@/features/Pricing/Nclex";
 
 export default function HomePage() {
   return (
     <>
       <Navbar />
       <HeroNclexrn />
+      <Nclex/>
       <Ai />
       <Whatsapp />
       <FloatingMascot/>

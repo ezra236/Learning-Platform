@@ -1,0 +1,122 @@
+.dashboardContainer {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fafbfc 0%, #f6f8fa 100%);
+  position: relative;
+}
+
+.sidebarWrapper {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 300px;
+  z-index: 1000;
+  background: #ffffff;
+  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.04);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-right: 1px solid #eaeef2;
+}
+
+.contentWrapper {
+  flex: 1;
+  margin-left: 300px;
+  padding: 32px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  transition: margin-left 0.3s ease;
+  background: #fafbfc;
+}
+
+/* Mobile Menu Toggle */
+.mobileMenuToggle {
+  display: none;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1001;
+  background: #4f86f7;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(79, 134, 247, 0.25);
+  transition: all 0.2s ease;
+}
+
+.mobileMenuToggle:hover {
+  background: #3a75f5;
+  transform: scale(1.05);
+}
+
+/* Overlay for mobile */
+.mobileOverlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .sidebarWrapper {
+    width: 280px;
+  }
+  
+  .contentWrapper {
+    margin-left: 280px;
+    padding: 28px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .sidebarWrapper {
+    transform: translateX(-100%);
+  }
+  
+  .sidebarWrapper.mobileOpen {
+    transform: translateX(0);
+  }
+  
+  .contentWrapper {
+    margin-left: 0;
+    padding: 24px;
+  }
+  
+  .mobileMenuToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .mobileOverlay.mobileOpen {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .contentWrapper {
+    padding: 20px;
+  }
+  
+  .mobileMenuToggle {
+    top: 16px;
+    left: 16px;
+    width: 42px;
+    height: 42px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contentWrapper {
+    padding: 16px;
+  }
+}

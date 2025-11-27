@@ -1,4 +1,3 @@
-// View.jsx (enhanced with unicode icons)
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -94,30 +93,30 @@ export default function View() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <h1 className={styles.title}>📊 Exam Plans Management</h1>
-          <p className={styles.subtitle}>🎯 Manage subscription plans for different exam types</p>
+          <h1 className={styles.title}>📋 Exam Plans Management</h1>
+          <p className={styles.subtitle}>Manage subscription plans and pricing for examination services</p>
         </div>
         <button className={styles.addBtn} onClick={() => setShowAdd(true)}>
           <span className={styles.btnIcon}>➕</span>
-          Add New Plan
+          Create New Plan
         </button>
       </header>
 
       {loading && (
         <div className={styles.loading}>
-          <span className={styles.spinner}>🔄</span>
-          <span>Loading plans...</span>
+          <span className={styles.spinner}>⏳</span>
+          <span>Loading subscription plans...</span>
         </div>
       )}
 
       {!loading && groups.length === 0 && (
         <div className={styles.empty}>
-          <div className={styles.emptyIcon}>📋</div>
-          <h3>No plans found</h3>
-          <p>Get started by creating your first exam plan</p>
+          <div className={styles.emptyIcon}>📊</div>
+          <h3>No subscription plans configured</h3>
+          <p>Begin by creating your first examination plan</p>
           <button className={styles.emptyBtn} onClick={() => setShowAdd(true)}>
-            <span className={styles.btnIcon}>✨</span>
-            Create First Plan
+            <span className={styles.btnIcon}>🚀</span>
+            Create Initial Plan
           </button>
         </div>
       )}
@@ -128,7 +127,7 @@ export default function View() {
             <div className={styles.groupHeader}>
               <div className={styles.groupTitleSection}>
                 <h2 className={styles.groupTitle}>{g.exam_display}</h2>
-                <span className={styles.examType}>📝 {g.exam_type}</span>
+                <span className={styles.examType}>📄 {g.exam_type}</span>
               </div>
               <div className={styles.groupBadge}>
                 <span className={styles.badgeIcon}>📦</span>
@@ -138,8 +137,8 @@ export default function View() {
             <div className={styles.plans}>
               {g.plans.length === 0 && (
                 <div className={styles.noPlans}>
-                  <span className={styles.noPlansIcon}>😴</span>
-                  <span>No plans available for this exam type</span>
+                  <span className={styles.noPlansIcon}>📭</span>
+                  <span>No plans available for this examination type</span>
                 </div>
               )}
               {g.plans.map((p) => (
@@ -148,9 +147,9 @@ export default function View() {
                     <div className={styles.planTitleSection}>
                       <div className={styles.planTitle}>{p.title}</div>
                       <div className={styles.planMeta}>
-                        <span className={styles.duration}>📅 {p.duration_days} days</span>
+                        <span className={styles.duration}>⏱️ {p.duration_days} days access</span>
                         <div className={`${styles.status} ${p.active ? styles.activeStatus : styles.inactiveStatus}`}>
-                          {p.active ? '🟢 Active' : '⚪ Inactive'}
+                          {p.active ? '🟢 Active' : '⚫ Inactive'}
                         </div>
                       </div>
                     </div>
@@ -160,14 +159,20 @@ export default function View() {
                     </div>
                   </div>
                   
-                  <ul className={styles.features}>
-                    {p.features.map((f, index) => (
-                      <li key={f.id || `${f.name}-${index}`} className={styles.feature}>
-                        <span className={styles.featureIcon}>✅</span>
-                        <span className={styles.featureText}>{f.name || f}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className={styles.features}>
+                    <div className={styles.featuresHeader}>
+                      <span className={styles.featuresIcon}>✨</span>
+                      <span>Plan Features</span>
+                    </div>
+                    <ul className={styles.featuresList}>
+                      {p.features.map((f, index) => (
+                        <li key={f.id || `${f.name}-${index}`} className={styles.feature}>
+                          <span className={styles.featureIcon}>✓</span>
+                          <span className={styles.featureText}>{f.name || f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                   
                   <div className={styles.actions}>
                     <button 
@@ -175,7 +180,7 @@ export default function View() {
                       className={`${styles.actionBtn} ${p.active ? styles.deactivate : styles.activate}`}
                     >
                       <span className={styles.btnIcon}>
-                        {p.active ? '🔴' : '🟢'}
+                        {p.active ? '⏸️' : '▶️'}
                       </span>
                       {p.active ? "Deactivate" : "Activate"}
                     </button>
@@ -184,7 +189,7 @@ export default function View() {
                       onClick={() => handleEditClick(p)}
                       className={styles.editBtn}
                     >
-                      <span className={styles.btnIcon}>✏️</span>
+                      <span className={styles.btnIcon}>✎</span>
                       Edit
                     </button>
 
@@ -209,7 +214,7 @@ export default function View() {
         onSuccess={() => {
           fetchPlans();
           setShowAdd(false);
-          showDone("✨ Plan added successfully");
+          showDone("✅ Plan created successfully");
         }}
         onError={(msg) => showError(msg)}
       />

@@ -349,13 +349,13 @@
 
 .emptyTitle {
   font-size: 1.8rem;
-  color: white;
+  color: black;
   font-weight: 400;
   margin-bottom: 1rem;
 }
 
 .emptyMessage {
-  color: rgba(255, 255, 255, 0.9);
+  color: black;
   margin: 0;
   font-weight: 400;
   font-size: 1.1rem;

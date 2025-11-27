@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Campaign from "./Campaign";
-import Announcement from "./Announcement";
 import InsightsHeader from "./InsightsHeader";
 import LoadingState from "./LoadingState";
 import ErrorState from "./ErrorState";
@@ -26,7 +25,6 @@ async function ensureCsrf() {
 
 export default function Insights() {
   const [campaigns, setCampaigns] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all"); // all, active, inactive
@@ -34,15 +32,13 @@ export default function Insights() {
 
   const filteredCampaigns = useMemo(() => {
     let filtered = campaigns;
-    
-    // Filter by status
+
     if (filter === "active") {
-      filtered = filtered.filter(c => c.is_active);
+      filtered = filtered.filter((c) => c.is_active);
     } else if (filter === "inactive") {
-      filtered = filtered.filter(c => !c.is_active);
+      filtered = filtered.filter((c) => !c.is_active);
     }
-    
-    // Sort
+
     filtered = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case "views":
@@ -55,21 +51,9 @@ export default function Insights() {
           return 0;
       }
     });
-    
+
     return filtered;
   }, [campaigns, filter, sortBy]);
-
-  const filteredAnnouncements = useMemo(() => {
-    let filtered = announcements;
-    
-    if (filter === "active") {
-      filtered = filtered.filter(a => a.is_active);
-    } else if (filter === "inactive") {
-      filtered = filtered.filter(a => !a.is_active);
-    }
-    
-    return filtered.sort((a, b) => (b.views_count || 0) - (a.views_count || 0));
-  }, [announcements, filter]);
 
   useEffect(() => {
     let mounted = true;
@@ -80,22 +64,19 @@ export default function Insights() {
       await ensureCsrf();
 
       try {
-        const [cRes, aRes] = await Promise.all([
-          fetch(`${API_BASE}/api/campaignsinsights/`, { credentials: "include" }),
-          fetch(`${API_BASE}/api/announcementsinsights/`, { credentials: "include" }),
-        ]);
+        const cRes = await fetch(`${API_BASE}/api/campaignsinsights/`, {
+          credentials: "include",
+        });
 
-        if (!cRes.ok || !aRes.ok) {
-          const msg = `Failed to load data: Campaigns ${cRes.status}, Announcements ${aRes.status}`;
+        if (!cRes.ok) {
+          const msg = `Failed to load campaigns: ${cRes.status}`;
           throw new Error(msg);
         }
 
         const cJson = await cRes.json();
-        const aJson = await aRes.json();
 
         if (mounted) {
           setCampaigns(cJson.results || []);
-          setAnnouncements(aJson.results || []);
         }
       } catch (err) {
         console.error(err);
@@ -107,20 +88,18 @@ export default function Insights() {
 
     load();
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const totalViews = useMemo(() => {
-    const campaignViews = campaigns.reduce((sum, c) => sum + (c.views_count || 0), 0);
-    const announcementViews = announcements.reduce((sum, a) => sum + (a.views_count || 0), 0);
-    return campaignViews + announcementViews;
-  }, [campaigns, announcements]);
+    return campaigns.reduce((sum, c) => sum + (c.views_count || 0), 0);
+  }, [campaigns]);
 
   const activeCount = useMemo(() => {
-    const activeCampaigns = campaigns.filter(c => c.is_active).length;
-    const activeAnnouncements = announcements.filter(a => a.is_active).length;
-    return activeCampaigns + activeAnnouncements;
-  }, [campaigns, announcements]);
+    return campaigns.filter((c) => c.is_active).length;
+  }, [campaigns]);
 
   if (loading) {
     return <LoadingState type="insights" />;
@@ -132,17 +111,16 @@ export default function Insights() {
 
   return (
     <div className={styles.container}>
-      <InsightsHeader 
+      <InsightsHeader
         totalViews={totalViews}
         activeCount={activeCount}
         campaignsCount={campaigns.length}
-        announcementsCount={announcements.length}
         filter={filter}
         sortBy={sortBy}
         onFilterChange={setFilter}
         onSortChange={setSortBy}
       />
-      
+
       <div className={styles.content}>
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
@@ -152,7 +130,7 @@ export default function Insights() {
               <span className={styles.countBadge}>{filteredCampaigns.length}</span>
             </div>
             <div className={styles.sectionControls}>
-              <select 
+              <select
                 className={styles.select}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -163,42 +141,22 @@ export default function Insights() {
               </select>
             </div>
           </div>
-          
+
           <div className={styles.grid}>
             {filteredCampaigns.map((campaign) => (
               <Campaign key={campaign.id} campaign={campaign} />
             ))}
           </div>
-          
+
           {filteredCampaigns.length === 0 && (
-            <EmptyState 
+            <EmptyState
               icon="🎯"
               title="No campaigns found"
-              message={filter !== "all" ? `Try changing the filter to see ${filter === "active" ? "inactive" : "active"} campaigns` : "Create your first campaign to get started"}
-            />
-          )}
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionTitle}>
-              <span className={styles.icon}>📢</span>
-              Announcements
-              <span className={styles.countBadge}>{filteredAnnouncements.length}</span>
-            </div>
-          </div>
-          
-          <div className={styles.grid}>
-            {filteredAnnouncements.map((announcement) => (
-              <Announcement key={announcement.id} announcement={announcement} />
-            ))}
-          </div>
-          
-          {filteredAnnouncements.length === 0 && (
-            <EmptyState 
-              icon="📢"
-              title="No announcements found"
-              message={filter !== "all" ? `No ${filter} announcements available` : "Your announcements will appear here"}
+              message={
+                filter !== "all"
+                  ? `Try changing the filter to see ${filter === "active" ? "inactive" : "active"} campaigns`
+                  : "Create your first campaign to get started"
+              }
             />
           )}
         </section>

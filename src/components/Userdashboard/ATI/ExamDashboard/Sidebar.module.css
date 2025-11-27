@@ -1,0 +1,517 @@
+.sidebar {
+  width: 100%;
+  height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid #eaeef2;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #d0d7de transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #d0d7de;
+  border-radius: 2px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #afb8c1;
+}
+
+/* Header */
+.header {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid #f0f3f6;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoIconContainer {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #6b7ff7 0%, #7c53c4 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(107, 127, 247, 0.2);
+}
+
+.logoIcon {
+  font-size: 18px;
+  filter: brightness(0) invert(1);
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.logoPrimary {
+  font-size: 17px;
+  font-weight: 500;
+  color: #2d3748;
+  letter-spacing: -0.01em;
+}
+
+.logoSecondary {
+  font-size: 13px;
+  font-weight: 400;
+  color: #718096;
+  letter-spacing: 0.03em;
+}
+
+.badge {
+  background: linear-gradient(135deg, #ff8a8a 0%, #ff5e7d 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Profile Section */
+.profileSection {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f3f6;
+}
+
+.avatarContainer {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6b7ff7 0%, #7c53c4 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(107, 127, 247, 0.2);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.avatarFallback {
+  font-size: 22px;
+  font-weight: 400;
+  color: white;
+  text-transform: uppercase;
+}
+
+.onlineIndicator {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  background: #48bb78;
+  border: 2px solid white;
+  border-radius: 50%;
+}
+
+.userInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.username {
+  font-size: 17px;
+  font-weight: 500;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.userStats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statIcon {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.statText {
+  font-size: 13px;
+  color: #718096;
+  font-weight: 400;
+}
+
+/* Navigation */
+.navigation {
+  padding: 24px 0;
+  background: #ffffff;
+}
+
+.navHeader {
+  padding: 0 24px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navIcon {
+  font-size: 16px;
+}
+
+.navTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #718096;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.navLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  text-decoration: none;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+  position: relative;
+  overflow: hidden;
+  font-weight: 400;
+}
+
+.navLink::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(107, 127, 247, 0.08), transparent);
+  transition: left 0.5s ease;
+}
+
+.navLink:hover::before {
+  left: 100%;
+}
+
+.navLink:hover {
+  background: #fafbfc;
+  color: #4f86f7;
+  border-left-color: #6b7ff7;
+  transform: translateX(2px);
+}
+
+.navLinkActive {
+  background: #f8f9ff !important;
+  color: #4f86f7 !important;
+  border-left-color: #6b7ff7 !important;
+}
+
+.navLinkActive .linkIcon {
+  transform: scale(1.05);
+}
+
+.linkIcon {
+  font-size: 18px;
+  width: 22px;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.linkText {
+  flex: 1;
+  font-size: 14px;
+  font-weight: inherit;
+}
+
+.linkArrow {
+  font-size: 16px;
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: all 0.2s ease;
+}
+
+.navLink:hover .linkArrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.navLinkActive .linkArrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Progress Section */
+.progressSection {
+  padding: 20px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f0f3f6;
+  border-bottom: 1px solid #f0f3f6;
+}
+
+.progressHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.progressIcon {
+  font-size: 16px;
+}
+
+.progressTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #718096;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: #f1f3f6;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78, #68d391);
+  border-radius: 3px;
+  transition: width 0.8s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #718096;
+  font-weight: 400;
+}
+
+.progressText span:first-child {
+  color: #48bb78;
+}
+
+/* Footer */
+.footer {
+  padding: 24px;
+  background: #ffffff;
+  margin-top: auto;
+}
+
+.footerContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.footerIcon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #f6ad55, #ed8936);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.footerText {
+  flex: 1;
+}
+
+.footerQuote {
+  font-size: 13px;
+  font-weight: 400;
+  color: #4a5568;
+  margin-bottom: 2px;
+}
+
+.footerSubtext {
+  font-size: 12px;
+  color: #718096;
+  font-weight: 400;
+}
+
+.footerCopyright {
+  font-size: 11px;
+  color: #a0aec0;
+  text-align: center;
+  font-weight: 400;
+}
+
+/* Loading States */
+.skeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skeletonLine {
+  height: 16px;
+  background: linear-gradient(90deg, #f1f3f6 25%, #e8ebf0 50%, #f1f3f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeletonSubline {
+  height: 12px;
+  width: 70%;
+  background: linear-gradient(90deg, #f1f3f6 25%, #e8ebf0 50%, #f1f3f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 3px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.error {
+  color: #e53e3e;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+  padding: 6px 0;
+}
+
+.errorIcon {
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 280px;
+  }
+  
+  .header {
+    padding: 24px 20px 16px;
+  }
+  
+  .profileSection {
+    padding: 20px;
+  }
+  
+  .navHeader,
+  .navLink {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .progressSection {
+    padding: 16px 20px;
+  }
+  
+  .footer {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: fixed;
+    z-index: 1000;
+  }
+  
+  .header {
+    padding: 20px 16px;
+  }
+  
+  .profileSection {
+    padding: 16px;
+  }
+  
+  .avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+  }
+  
+  .username {
+    font-size: 16px;
+  }
+}

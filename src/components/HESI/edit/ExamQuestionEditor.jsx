@@ -11,10 +11,6 @@ const formatConfig = {
   4: { question: true, paragraph: true,  image: false, table: false, choices: true, specialChoices: false, specialOrder: false, explanation: true },
   5: { question: true, paragraph: false, image: false, table: true,  choices: true, specialChoices: false, specialOrder: false, explanation: true },
   6: { question: false,paragraph: true,  image: false, table: true,  choices: true, specialChoices: false, specialOrder: false, explanation: true },
-  7: { question: true, paragraph: true,  image: false, table: false, choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
-  8: { question: true, paragraph: false, image: false, table: true,  choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
-  9: { question: false,paragraph: true,  image: false, table: true,  choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
- 10: { question: true, paragraph: false, image: false, table: false, choices: false, specialChoices: true,  specialOrder: true,  explanation: true },
 };
 
 const formatDescriptions = {
@@ -24,10 +20,6 @@ const formatDescriptions = {
   4: "4️⃣ Paragraph + Question + Choices + Explanation + Correct Answer",
   5: "5️⃣ Question + Table + Choices + Explanation + Correct Answer",
   6: "6️⃣ Paragraph + Table + Choices + Explanation + Correct Answer",
-  7: "7️⃣ Paragraph + Question + Special Choices + Explanation + Correct Order",
-  8: "8️⃣ Question + Table + Special Choices + Explanation + Correct Order",
-  9: "9️⃣ Paragraph + Table + Special Choices + Explanation + Correct Order",
- 10: "🔟 Question + Special Choices + Explanation + Correct Order"
 };
 
 export default function ExamQuestionEditor() {
